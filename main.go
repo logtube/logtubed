@@ -286,7 +286,7 @@ func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: true, TimeFormat: time.RFC3339})
 
 	// decode command line arguments
-	flag.StringVar(&optionsFile, "c", "/etc/logtube.yml", "config file")
+	flag.StringVar(&optionsFile, "c", "/etc/logtubed.yml", "config file")
 	flag.BoolVar(&dev, "dev", false, "enable dev mode")
 	flag.Parse()
 
