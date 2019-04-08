@@ -1,0 +1,12 @@
+[Unit]
+Description=logtubed service
+After=network.target
+Documentation=https://github.com/logtube/logtubed
+
+[Service]
+ExecStart=/usr/local/bin/logtubed
+Type=simple
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
