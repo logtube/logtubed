@@ -71,7 +71,7 @@ func acceptHandlerFunc(conn redcon.Conn) bool {
 	return true
 }
 
-func checkRecordTopic(r Record) bool {
+func checkRecordTopic(r Event) bool {
 	if stringSliceContainsIgnoreCase(options.EnforceKeyword, r.Topic) && len(r.Keyword) == 0 {
 		return false
 	}
@@ -92,13 +92,13 @@ func consumeRawEvent(raw []byte) {
 	}
 	log.Debug().Int("raw-length", len(raw)).Msg("raw message")
 	// unmarshal event
-	var event Event
+	var event BeatEvent
 	if err := json.Unmarshal(raw, &event); err != nil {
 		log.Debug().Err(err).Str("event", string(raw)).Msg("failed to unmarshal event")
 		return
 	}
 	// convert to record
-	if record, ok := event.ToRecord(options.TimeOffset); ok {
+	if record, ok := event.ToEvent(options.TimeOffset); ok {
 		// check should keyword be enforced
 		if checkRecordTopic(record) {
 			// convert to operation
@@ -208,7 +208,7 @@ func outputRoutine() {
 					// append request to bulk
 					bs = bs.Add(br)
 					// break the loop if batch size exceeded
-					if c > options.Elasticsearch.Batch.Size {
+					if c > options.ElasticSearch.Batch.Size {
 						log.Debug().Msg("batch size exceeded")
 						break FOR_LOOP
 					}
@@ -286,7 +286,7 @@ func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: true, TimeFormat: time.RFC3339})
 
 	// decode command line arguments
-	flag.StringVar(&optionsFile, "c", "/etc/xlogd.yml", "config file")
+	flag.StringVar(&optionsFile, "c", "/etc/logtube.yml", "config file")
 	flag.BoolVar(&dev, "dev", false, "enable dev mode")
 	flag.Parse()
 
@@ -317,10 +317,10 @@ func main() {
 	}
 
 	// create the queue
-	queue = diskqueue.New("xlogd", options.DataDir, 256*1024*1024, 20, 2*1024*1024, int64(options.Elasticsearch.Batch.Size), time.Second*20)
+	queue = diskqueue.New("xlogd", options.DataDir, 256*1024*1024, 20, 2*1024*1024, int64(options.ElasticSearch.Batch.Size), time.Second*20)
 
 	// create elasticsearch client
-	if client, err = elastic.NewClient(elastic.SetURL(options.Elasticsearch.URLs...)); err != nil {
+	if client, err = elastic.NewClient(elastic.SetURL(options.ElasticSearch.URLs...)); err != nil {
 		log.Error().Err(err).Msg("failed to create elasticsearch client")
 		os.Exit(1)
 		return
@@ -328,8 +328,8 @@ func main() {
 
 	// initialize limiter
 	limiter = ratelimit.NewBucket(
-		time.Second/time.Duration(options.Elasticsearch.Batch.Rate),
-		int64(options.Elasticsearch.Batch.Burst),
+		time.Second/time.Duration(options.ElasticSearch.Batch.Rate),
+		int64(options.ElasticSearch.Batch.Burst),
 	)
 
 	// create server
