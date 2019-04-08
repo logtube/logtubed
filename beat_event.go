@@ -6,10 +6,6 @@ import (
 	"time"
 )
 
-const (
-	eventTopicJSON = "_json_"
-)
-
 // BeatEvent a single event in redis LIST sent by filebeat
 type BeatEvent struct {
 	Beat struct {
@@ -29,7 +25,7 @@ func (b BeatEvent) ToEvent(timeOffset int) (r Event, ok bool) {
 	}
 	// decode message field
 	var noOffset bool
-	if noOffset, ok = decodeBeatMessage(b.Message, strings.Contains(r.Topic, eventTopicJSON), &r); !ok {
+	if noOffset, ok = decodeBeatMessage(b.Message, strings.Contains(r.Topic, "_json_"), &r); !ok {
 		return
 	}
 	if !noOffset {
