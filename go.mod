@@ -1,4 +1,4 @@
-module github.com/yankeguo/xlogd
+module github.com/logtube/logtubed
 
 go 1.12
 
