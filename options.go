@@ -7,7 +7,7 @@ import (
 	"github.com/go-yaml/yaml"
 )
 
-type InputRedisOptions struct {
+type RedisInputOptions struct {
 	Enabled    bool   `yaml:"enabled"`     // whether redis input is enabled
 	Bind       string `yaml:"bind"`        // bind address
 	Multi      bool   `yaml:"multi"`       // report as redis 2.4+, support multiple RPUSH/LPUSH
@@ -45,7 +45,7 @@ type OutputLocalOptions struct {
 // Options options for logtubed
 type Options struct {
 	Dev         bool               `yaml:"dev"`
-	InputRedis  InputRedisOptions  `yaml:"input_redis"`
+	InputRedis  RedisInputOptions  `yaml:"input_redis"`
 	InputSPTP   SPTPInputOptions   `yaml:"input_sptp"`
 	Topics      TopicsOptions      `yaml:"topics"`
 	Queue       QueueOptions       `yaml:"queue"`

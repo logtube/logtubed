@@ -8,7 +8,7 @@ require (
 	github.com/google/go-cmp v0.2.0 // indirect
 	github.com/juju/ratelimit v1.0.1
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/logtube/sptp v0.0.0-20190408044823-ae67543173a2 // indirect
+	github.com/logtube/sptp v0.0.0-20190408044823-ae67543173a2
 	github.com/mailru/easyjson v0.0.0-20190312143242-1de009706dbe // indirect
 	github.com/olivere/elastic v6.2.16+incompatible
 	github.com/pkg/errors v0.8.1
