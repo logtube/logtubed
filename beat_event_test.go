@@ -44,14 +44,12 @@ func Test_decodeV2BeatMessage(t *testing.T) {
 		t.Fatal("failed to decode plain")
 	}
 	if r.Crid != "0123456780af" {
-		t.Fatal("failed to decode crid")
+		t.Fatal("failed to decode plain crid")
 	}
-	t.Log(r)
 	if !decodeV2BeatMessage("[2019-03-27 12:32:22.324 +0800] {\"c\":\"0123456780af\", \"k\":\"keyword1,keyword2\", \"x\":{ \"duration\": 121 }}", &r) {
 		t.Fatal("failed to decode plain")
 	}
 	if r.Crid != "0123456780af" {
-		t.Fatal("failed to decode json")
+		t.Fatal("failed to decode json crid")
 	}
-	t.Log(r)
 }

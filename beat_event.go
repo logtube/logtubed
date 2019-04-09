@@ -10,6 +10,8 @@ import (
 
 /*
 
+Examples:
+
 V1 Message: [2018/09/10 17:24:22.120] CRID[945bea8e42de2796] this is a message
 V2 Message: [2018-09-10 17:24:22.120 +0800] CRID[945bea8e42de2796] this is a message
 
@@ -19,17 +21,20 @@ const (
 	v2TimestampLayout = "2006-01-02 15:04:05.000 -0700"
 )
 
-// BeatEvent a single event in redis LIST sent by filebeat
+// BeatEventBeat beat field in BeatEvent
+type BeatEventBeat struct {
+	Hostname string `json:"hostname"`
+}
+
+// BeatEvent a single event in redis sent by filebeat
 type BeatEvent struct {
-	Beat struct {
-		Hostname string `json:"hostname"`
-	} `json:"beat"` // contains hostname
-	Message string `json:"message"` // contains timestamp, crid
-	Source  string `json:"source"`  // contains env, topic, project
+	Beat    BeatEventBeat `json:"beat"`    // contains hostname
+	Message string        `json:"message"` // contains timestamp, crid
+	Source  string        `json:"source"`  // contains env, topic, project
 }
 
 // ToEvent implements RecordConvertible
-func (b BeatEvent) ToEvent(timeOffset int) (r Event, ok bool) {
+func (b BeatEvent) ToEvent(defaultTimeOffset int) (r Event, ok bool) {
 	// assign hostname
 	r.Hostname = b.Beat.Hostname
 	// decode source field
@@ -51,7 +56,7 @@ func (b BeatEvent) ToEvent(timeOffset int) (r Event, ok bool) {
 			return
 		}
 		if !noOffset {
-			r.Timestamp = r.Timestamp.Add(time.Hour * time.Duration(timeOffset))
+			r.Timestamp = r.Timestamp.Add(time.Hour * time.Duration(defaultTimeOffset))
 		}
 	}
 	return

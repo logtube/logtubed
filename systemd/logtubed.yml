@@ -1,0 +1,33 @@
+dev: false
+
+input_redis:
+  enabled: true
+  bind: 127.0.0.1:6379
+  multi: false
+  time_offset: -8
+
+input_sptp:
+  enabled: true
+  bind: 127.0.0.1:9921
+
+topics:
+  keyword_required:
+    - info
+  ignored:
+    - debug
+
+queue:
+  dir: /data/xlogd
+  name: xlogd
+
+output_es:
+  enabled: true
+  urls:
+    - http://127.0.0.1
+  batch_size: 100
+  batch_rate: 1000
+  batch_burst: 10000
+
+output_local:
+  enabled: false
+  dir: /data/xlogd_local
