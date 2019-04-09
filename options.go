@@ -14,7 +14,7 @@ type InputRedisOptions struct {
 	TimeOffset int    `yaml:"time_offset"` // for legacy message, default time offset, set -8 for Asia/Shanghai
 }
 
-type InputSPTPOptions struct {
+type SPTPInputOptions struct {
 	Enabled bool   `yaml:"enabled"` // whether SPTP input is enabled
 	Bind    string `yaml:"bind"`    // bind address
 }
@@ -46,7 +46,7 @@ type OutputLocalOptions struct {
 type Options struct {
 	Dev         bool               `yaml:"dev"`
 	InputRedis  InputRedisOptions  `yaml:"input_redis"`
-	InputSPTP   InputSPTPOptions   `yaml:"input_sptp"`
+	InputSPTP   SPTPInputOptions   `yaml:"input_sptp"`
 	Topics      TopicsOptions      `yaml:"topics"`
 	Queue       QueueOptions       `yaml:"queue"`
 	OutputES    OutputESOptions    `yaml:"output_es"`
