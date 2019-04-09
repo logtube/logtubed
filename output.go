@@ -5,7 +5,7 @@ import "io"
 type Output interface {
 	io.Closer
 
-	Put(e Event) error
+	Put(op Operation) error
 }
 
 func MultiOutput(outputs ...Output) Output {
@@ -26,10 +26,10 @@ func (m *multiOutput) Close() (err error) {
 	return
 }
 
-func (m *multiOutput) Put(e Event) (err error) {
+func (m *multiOutput) Put(op Operation) (err error) {
 	var err1 error
 	for _, o := range m.outputs {
-		if err1 = o.Put(e); err1 != nil {
+		if err1 = o.Put(op); err1 != nil {
 			err = err1
 		}
 	}

@@ -15,7 +15,7 @@ func (t *testOutput) Close() error {
 	return errors.New("dummy")
 }
 
-func (t *testOutput) Put(e Event) error {
+func (t *testOutput) Put(e Operation) error {
 	t.c++
 	return errors.New("dummy")
 }
@@ -26,9 +26,9 @@ func TestMultiOutput(t *testing.T) {
 
 	o := MultiOutput(o1, o2)
 
-	o.Put(Event{})
-	o.Put(Event{})
-	o.Put(Event{})
+	o.Put(Operation{})
+	o.Put(Operation{})
+	o.Put(Operation{})
 
 	o.Close()
 
