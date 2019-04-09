@@ -19,6 +19,7 @@ type Event struct {
 	Extra     map[string]interface{} `json:"extra,omitempty"`   // extra structured data
 }
 
+// Map convert event into Logtube Event final format
 func (r Event) Map() (out map[string]interface{}) {
 	out = map[string]interface{}{}
 	// assign extra with prefix
@@ -32,7 +33,9 @@ func (r Event) Map() (out map[string]interface{}) {
 	out["project"] = r.Project
 	out["topic"] = r.Topic
 	out["crid"] = r.Crid
-	out["keyword"] = r.Keyword
+	if len(r.Keyword) > 0 {
+		out["keyword"] = r.Keyword
+	}
 	if len(r.Message) > 0 {
 		out["message"] = r.Message
 	}

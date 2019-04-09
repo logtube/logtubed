@@ -37,7 +37,7 @@ type OutputESOptions struct {
 	BatchBurst int      `yaml:"batch_burst"`
 }
 
-type OutputLocalOptions struct {
+type LocalOutputOptions struct {
 	Enabled bool   `yaml:"enabled"`
 	Dir     string `yaml:"dir"`
 }
@@ -50,7 +50,7 @@ type Options struct {
 	Topics      TopicsOptions      `yaml:"topics"`
 	Queue       QueueOptions       `yaml:"queue"`
 	OutputES    OutputESOptions    `yaml:"output_es"`
-	OutputLocal OutputLocalOptions `yaml:"output_local"`
+	OutputLocal LocalOutputOptions `yaml:"output_local"`
 }
 
 func loadOptionsFile(filename string) (opt Options, err error) {
