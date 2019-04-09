@@ -1,5 +1,9 @@
 package main
 
+func main() {
+}
+
+/*
 import (
 	"bytes"
 	"context"
@@ -333,7 +337,7 @@ func main() {
 	)
 
 	// create server
-	server = redcon.NewServer(options.Bind, commandHandlerFunc, acceptHandlerFunc, closedHandlerFunc)
+	server = redcon.NewServer(options.RedisBind, commandHandlerFunc, acceptHandlerFunc, closedHandlerFunc)
 
 	// start the server
 	setup := make(chan error, 1)
@@ -343,7 +347,7 @@ func main() {
 		os.Exit(1)
 		return
 	}
-	log.Info().Str("bind", options.Bind).Str("version", Version).Msg("server started")
+	log.Info().Str("bind", options.RedisBind).Str("version", Version).Msg("server started")
 
 	// start outputRoutine
 	go outputRoutine()
@@ -356,7 +360,7 @@ func main() {
 
 	// close the server
 	err = server.Close()
-	log.Info().Str("bind", options.Bind).Err(err).Msg("server closed")
+	log.Info().Str("bind", options.RedisBind).Err(err).Msg("server closed")
 
 	// mark to shutdown and wait for output complete
 	shutdown = true
@@ -367,3 +371,4 @@ func main() {
 	queue.Close()
 	log.Info().Msg("queue file closed, exiting")
 }
+*/
