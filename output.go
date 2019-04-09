@@ -2,6 +2,7 @@ package main
 
 import "io"
 
+// Output output interface, all outputs are operated single-thread
 type Output interface {
 	io.Closer
 

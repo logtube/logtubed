@@ -6,50 +6,36 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 )
 
 type LocalOutput struct {
 	Options LocalOutputOptions
 
-	files      map[string]*os.File
-	filesMutex *sync.RWMutex
+	files map[string]*os.File
 }
 
 func NewLocalOutput(options LocalOutputOptions) (o *LocalOutput, err error) {
 	o = &LocalOutput{
-		Options:    options,
-		files:      map[string]*os.File{},
-		filesMutex: &sync.RWMutex{},
+		Options: options,
+		files:   map[string]*os.File{},
 	}
 	err = os.MkdirAll(o.Options.Dir, 0755)
 	return
 }
 
 func (l *LocalOutput) takeFile(index string) (f *os.File, err error) {
-	// close all on exceeded
+	// close all if opened too much
 	if len(l.files) > 2000 {
-		l.filesMutex.Lock()
 		l.closeFiles()
-		l.filesMutex.Unlock()
 	}
 
-	// find with R lock
-	l.filesMutex.RLock()
-	f = l.files[index]
-	l.filesMutex.RUnlock()
-
-	if f != nil {
-		return
-	}
-
-	// re-find or create with W lock
-	l.filesMutex.Lock()
-	defer l.filesMutex.Unlock()
+	// find
 	f = l.files[index]
 	if f != nil {
 		return
 	}
+
+	// create
 	if f, err = os.OpenFile(
 		filepath.Join(l.Options.Dir, index+".log"),
 		os.O_CREATE|os.O_RDWR|os.O_APPEND,
@@ -57,6 +43,8 @@ func (l *LocalOutput) takeFile(index string) (f *os.File, err error) {
 	); err != nil {
 		return
 	}
+
+	// set
 	l.files[index] = f
 
 	return
@@ -70,8 +58,6 @@ func (l *LocalOutput) closeFiles() {
 }
 
 func (l *LocalOutput) Close() error {
-	l.filesMutex.Lock()
-	defer l.filesMutex.Unlock()
 	l.closeFiles()
 	return nil
 }
