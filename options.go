@@ -29,7 +29,7 @@ type QueueOptions struct {
 	Name string `yaml:"name"`
 }
 
-type OutputESOptions struct {
+type ESOutputOptions struct {
 	Enabled    bool     `yaml:"enabled"`
 	URLs       []string `yaml:"urls"`
 	BatchSize  int      `yaml:"batch_size"`
@@ -49,7 +49,7 @@ type Options struct {
 	InputSPTP   SPTPInputOptions   `yaml:"input_sptp"`
 	Topics      TopicsOptions      `yaml:"topics"`
 	Queue       QueueOptions       `yaml:"queue"`
-	OutputES    OutputESOptions    `yaml:"output_es"`
+	OutputES    ESOutputOptions    `yaml:"output_es"`
 	OutputLocal LocalOutputOptions `yaml:"output_local"`
 }
 
