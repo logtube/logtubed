@@ -8,6 +8,7 @@ import (
 	"github.com/yankeguo/diskqueue"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -181,6 +182,18 @@ func main() {
 			case e := <-buffer:
 				var err error
 				var buf []byte
+				for _, t := range options.Topics.Ignored {
+					if strings.ToLower(t) == strings.ToLower(e.Topic) {
+						continue forLoop
+					}
+				}
+				for _, t := range options.Topics.KeywordRequired {
+					if strings.ToLower(t) == strings.ToLower(e.Topic) {
+						if len(e.Keyword) == 0 {
+							continue forLoop
+						}
+					}
+				}
 				if buf, err = e.ToOperation().GobMarshal(); err != nil {
 					log.Error().Err(err).Msg("failed to marshal operation")
 					continue forLoop
