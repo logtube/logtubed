@@ -19,6 +19,7 @@ topics:
 queue:
   dir: /data/xlogd
   name: xlogd
+  sync_every: 1000
 
 output_es:
   enabled: true

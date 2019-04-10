@@ -25,8 +25,9 @@ type TopicsOptions struct {
 }
 
 type QueueOptions struct {
-	Dir  string `yaml:"dir"`
-	Name string `yaml:"name"`
+	Dir       string `yaml:"dir"`
+	Name      string `yaml:"name"`
+	SyncEvery int    `yaml:"sync_every"`
 }
 
 type ESOutputOptions struct {
@@ -74,6 +75,7 @@ func LoadOptions(filename string) (opt Options, err error) {
 	defaultStr(&opt.InputSPTP.Bind, "0.0.0.0:9921")
 	defaultStr(&opt.Queue.Dir, "/var/lib/logtubed")
 	defaultStr(&opt.Queue.Name, "logtubed")
+	defaultInt(&opt.Queue.SyncEvery, 100)
 	defaultStrSlice(&opt.OutputES.URLs, []string{"http://127.0.0.1:9200"})
 	defaultInt(&opt.OutputES.BatchSize, 100)
 	defaultInt(&opt.OutputES.BatchRate, 1000)
