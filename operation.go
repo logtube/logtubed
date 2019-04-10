@@ -15,7 +15,7 @@ type Operation struct {
 func (o Operation) GobMarshal() (ret []byte, err error) {
 	// encode operation
 	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(o); err != nil {
+	if err = gob.NewEncoder(&buf).Encode(o); err != nil {
 		return
 	}
 	ret = buf.Bytes()
