@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/pkg/errors"
+	"errors"
 )
 
 // Operation marshaled record
