@@ -235,12 +235,17 @@ func main() {
 	_ = input.Close()
 	// wait input
 	<-waitInput
+	log.Info().Msg("inputs exited")
 	// close transform
 	shutTrans <- true
 	// wait transform
 	<-waitTrans
+	log.Info().Msg("transform exited")
+	// close queue
+	_ = queue.Close()
 	// close output
 	shutOutput <- true
 	// wait output
 	<-waitOutput
+	log.Info().Msg("output exited")
 }
