@@ -2,13 +2,13 @@ dev: false
 
 input_redis:
   enabled: true
-  bind: 127.0.0.1:6379
+  bind: 0.0.0.0:6379
   multi: false
   time_offset: -8
 
 input_sptp:
   enabled: true
-  bind: 127.0.0.1:9921
+  bind: 0.0.0.0:9921
 
 topics:
   keyword_required:
@@ -24,7 +24,7 @@ queue:
 output_es:
   enabled: true
   urls:
-    - http://127.0.0.1
+    - http://127.0.0.1:9200
   batch_size: 100
   batch_rate: 1000
   batch_burst: 10000
