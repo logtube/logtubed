@@ -177,7 +177,6 @@ func main() {
 	go func() {
 	forLoop:
 		for {
-		selectLoop:
 			select {
 			case e := <-buffer:
 				var err error
@@ -202,7 +201,6 @@ func main() {
 					log.Error().Err(err).Msg("failed to queue operation")
 					continue forLoop
 				}
-				break selectLoop
 			case <-shutTrans:
 				break forLoop
 			}
@@ -217,20 +215,18 @@ func main() {
 		out := queue.ReadChan()
 	forLoop:
 		for {
-		selectLoop:
 			select {
 			case b := <-out:
 				var err error
 				var o Operation
 				if o, err = UnmarshalOperationGob(b); err != nil {
 					log.Error().Err(err).Msg("failed to unmarshal operation")
-					continue
+					continue forLoop
 				}
 				if err = output.Put(o); err != nil {
 					log.Error().Err(err).Msg("failed to put output")
-					continue
+					continue forLoop
 				}
-				break selectLoop
 			case <-shutOutput:
 				break forLoop
 			}
