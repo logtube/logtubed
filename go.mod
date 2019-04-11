@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/fortytw2/leaktest v1.3.0 // indirect
+	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/google/go-cmp v0.2.0 // indirect
 	github.com/juju/ratelimit v1.0.1
