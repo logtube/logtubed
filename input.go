@@ -31,7 +31,9 @@ func (m *multiInput) Close() (err error) {
 
 func (m *multiInput) Run(queue chan Event) (err error) {
 	wg := &sync.WaitGroup{}
-	wg.Add(len(m.inputs))
+	wg.Add(1)
+
+	once := &sync.Once{}
 
 	for _, i := range m.inputs {
 		var input = i
@@ -40,7 +42,7 @@ func (m *multiInput) Run(queue chan Event) (err error) {
 			if err1 = input.Run(queue); err1 != nil {
 				err = err1
 			}
-			wg.Done()
+			once.Do(wg.Done)
 		}()
 	}
 
