@@ -2,8 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"strings"
 	"time"
 )
+
+var ErrInvalidCompactEvent = errors.New("invalid compact event")
 
 // CompactEvent compact version of event
 type CompactEvent struct {
@@ -22,6 +26,13 @@ func UnmarshalCompactEventJSON(buf []byte) (c CompactEvent, err error) {
 	if err = json.Unmarshal(buf, &c); err != nil {
 		return
 	}
+	trimStr(&c.Hostname)
+	trimStr(&c.Env)
+	trimStr(&c.Topic)
+	trimStr(&c.Project)
+	if len(c.Env)+len(c.Topic)+len(c.Project) == 0 {
+		err = ErrInvalidCompactEvent
+	}
 	return
 }
 
@@ -36,4 +47,8 @@ func (c CompactEvent) ToEvent() (e Event) {
 	e.Keyword = c.Keyword
 	e.Extra = c.Extra
 	return
+}
+
+func trimStr(str *string) {
+	*str = strings.TrimSpace(*str)
 }
