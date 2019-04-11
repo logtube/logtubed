@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // CompactEvent compact version of event
 type CompactEvent struct {
@@ -13,6 +16,13 @@ type CompactEvent struct {
 	Message   string                 `json:"m,omitempty"` // the actual log message body
 	Keyword   string                 `json:"k"`           // comma separated keywords
 	Extra     map[string]interface{} `json:"x,omitempty"` // extra structured data
+}
+
+func UnmarshalCompactEventJSON(buf []byte) (c CompactEvent, err error) {
+	if err = json.Unmarshal(buf, &c); err != nil {
+		return
+	}
+	return
 }
 
 func (c CompactEvent) ToEvent() (e Event) {
