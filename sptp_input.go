@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"github.com/logtube/sptp"
 	"net"
 )
@@ -45,7 +44,7 @@ func (s *SPTPInput) Run(queue chan Event) error {
 			continue
 		}
 		var ce CompactEvent
-		if err = json.Unmarshal(buf, &ce); err != nil {
+		if ce, err = UnmarshalCompactEventJSON(buf); err != nil {
 			continue
 		}
 
