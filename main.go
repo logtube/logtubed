@@ -83,6 +83,9 @@ func main() {
 		int64(options.Queue.SyncEvery),
 		time.Second*20,
 	)
+
+	log.Info().Str("name", options.Queue.Name).Msg("queue created")
+
 	defer queue.Close() // close queue at last
 
 	// create outputs
@@ -95,6 +98,7 @@ func main() {
 			log.Error().Err(err).Msg("failed to create es output")
 			return
 		}
+		log.Info().Msg("es output created")
 
 		defer output.Close() // close output after input
 
@@ -108,6 +112,8 @@ func main() {
 			log.Error().Err(err).Msg("failed to create local output")
 			return
 		}
+
+		log.Info().Msg("local output created")
 
 		defer output.Close() // close output after input
 
@@ -132,6 +138,8 @@ func main() {
 			return
 		}
 
+		log.Info().Msg("redis input created")
+
 		defer input.Close() // close input before output
 
 		inputs = append(inputs, input)
@@ -144,6 +152,8 @@ func main() {
 			log.Error().Err(err).Msg("failed to create SPTP input")
 			return
 		}
+
+		log.Info().Msg("SPTP input created")
 
 		defer input.Close() // close input before output
 
