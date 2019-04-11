@@ -245,10 +245,16 @@ func main() {
 		waitOutput <- true
 	}()
 
+	// notify systemd for ready
+	_, _ = SdNotify(false, SdNotifyReady)
+
 	// wait for signal
 	signal.Notify(waitSignal, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-waitSignal
 	log.Info().Str("signal", sig.String()).Msg("signal caught")
+
+	// notify systemd for stopping
+	_, _ = SdNotify(false, SdNotifyStopping)
 
 	// shutdown input
 	_ = input.Close()
