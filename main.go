@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/yankeguo/diskqueue"
@@ -14,12 +15,14 @@ import (
 )
 
 var (
+	Version     = "(UNKNOWN)"
+	flagVersion bool
+	flagVerbose bool
+
 	err error
 
 	optionsFile string
 	options     Options
-
-	dev bool
 
 	queue diskqueue.DiskQueue
 
@@ -31,8 +34,6 @@ func exit() {
 	if err != nil {
 		log.Error().Err(err).Msg("exited")
 		os.Exit(1)
-	} else {
-		log.Info().Msg("exited")
 	}
 }
 
@@ -45,8 +46,14 @@ func main() {
 
 	// decode command line arguments
 	flag.StringVar(&optionsFile, "c", "/etc/logtubed.yml", "config file")
-	flag.BoolVar(&dev, "dev", false, "enable dev mode")
+	flag.BoolVar(&flagVerbose, "verbose", false, "enable verbose mode")
+	flag.BoolVar(&flagVersion, "version", false, "show version")
 	flag.Parse()
+
+	if flagVersion {
+		fmt.Println("logtubed " + Version)
+		return
+	}
 
 	// load options
 	log.Info().Str("file", optionsFile).Msg("load options file")
@@ -55,13 +62,13 @@ func main() {
 		return
 	}
 
-	// set dev from command line arguments
-	if dev {
-		options.Dev = true
+	// set verbose from command line arguments
+	if flagVerbose {
+		options.Verbose = true
 	}
 
 	// re-init logger
-	if options.Dev {
+	if options.Verbose {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 	}
