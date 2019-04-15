@@ -1,4 +1,4 @@
-dev: false
+verbose: false
 
 input_redis:
   enabled: true

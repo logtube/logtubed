@@ -45,7 +45,7 @@ type LocalOutputOptions struct {
 
 // Options options for logtubed
 type Options struct {
-	Dev         bool               `yaml:"dev"`
+	Verbose     bool               `yaml:"verbose"`
 	InputRedis  RedisInputOptions  `yaml:"input_redis"`
 	InputSPTP   SPTPInputOptions   `yaml:"input_sptp"`
 	Topics      TopicsOptions      `yaml:"topics"`
