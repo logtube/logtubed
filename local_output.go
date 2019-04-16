@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,6 +73,11 @@ func (l *LocalOutput) Put(op Operation) (err error) {
 		return
 	}
 	_, err = f.WriteString(ret)
+	if err != nil {
+		log.Error().Err(err).Str("output", "local").Str("file", f.Name()).Msg("events out")
+	} else {
+		log.Debug().Str("output", "local").Str("file", f.Name()).Msg("events out")
+	}
 	return
 }
 

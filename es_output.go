@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/juju/ratelimit"
 	"github.com/olivere/elastic"
+	"github.com/rs/zerolog/log"
 	"time"
 )
 
@@ -63,6 +64,11 @@ func (e *ESOutput) Put(op Operation) (err error) {
 	// submit bulk if needed
 	if e.checkTimeout() || e.bulk.NumberOfActions() > e.Options.BatchSize {
 		_, err = e.bulk.Do(context.Background())
+		if err != nil {
+			log.Error().Str("output", "ES").Err(err).Msg("failed to bulk insert")
+		} else {
+			log.Debug().Str("output", "ES").Int("count", e.bulk.NumberOfActions()).Msg("events out")
+		}
 		e.bulk = nil
 		return
 	}
