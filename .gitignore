@@ -17,3 +17,6 @@
 
 # Goland
 /.idea
+
+# dist
+/*dist*.tar.gz
