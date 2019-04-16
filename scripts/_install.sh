@@ -5,17 +5,17 @@ set -u
 
 cd $(dirname $0)
 
-install -m 644 logtubed.service /lib/systemd/system/logtubed.service
+install -o root -m 644 logtubed.service /lib/systemd/system/logtubed.service
 
 if ! [ -e /etc/logtubed.yml ]
 then
-    install -m 644 logtubed.yml     /etc/logtubed.yml
+    install -o root -m 644 logtubed.yml     /etc/logtubed.yml
 fi
 
 systemctl daemon-reload
 systemctl stop logtubed
 
-install -s -m 755 logtubed      /usr/bin/logtubed
+install -o root -s -m 755 logtubed      /usr/bin/logtubed
 
 if ! id -u logtubed > /dev/null 2>&1
 then
