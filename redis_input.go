@@ -70,6 +70,7 @@ func (r *RedisInput) consumeRawEvent(raw []byte, queue chan Event) {
 	}
 	// convert to record
 	if record, ok := event.ToEvent(r.Options.TimeOffset); ok {
+		log.Debug().Str("input", "redis").Interface("event", record).Msg("new event")
 		queue <- record
 	} else {
 		log.Debug().Str("event", string(raw)).Msg("failed to convert record")

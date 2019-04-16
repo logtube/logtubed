@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/logtube/sptp"
+	"github.com/rs/zerolog/log"
 	"net"
 )
 
@@ -47,6 +48,7 @@ func (s *SPTPInput) Run(queue chan Event) error {
 		if ce, err = UnmarshalCompactEventJSON(buf); err != nil {
 			continue
 		}
+		log.Debug().Str("input", "SPTP").Interface("event", ce).Msg("new event")
 
 		queue <- ce.ToEvent()
 	}
