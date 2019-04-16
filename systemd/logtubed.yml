@@ -17,8 +17,8 @@ topics:
     - debug
 
 queue:
-  dir: /data/xlogd
-  name: xlogd
+  dir: /var/lib/logtube
+  name: logtube
   sync_every: 1000
 
 output_es:
@@ -31,4 +31,4 @@ output_es:
 
 output_local:
   enabled: false
-  dir: /data/xlogd_local
+  dir: /var/log/logtube-logs

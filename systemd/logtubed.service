@@ -4,7 +4,9 @@ After=network.target
 Documentation=https://github.com/logtube/logtubed
 
 [Service]
-ExecStart=/usr/local/bin/logtubed
+User=logtubed
+Group=logtubed
+ExecStart=/usr/bin/logtubed
 Type=notify
 Restart=on-failure
 
