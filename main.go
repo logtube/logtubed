@@ -21,6 +21,8 @@ var (
 
 	err error
 
+	hostname string
+
 	optionsFile string
 	options     Options
 
@@ -71,6 +73,12 @@ func main() {
 	if options.Verbose {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
+	}
+
+	// resolve hostname
+	if hostname, err = os.Hostname(); err != nil {
+		log.Error().Err(err).Msg("failed to retrieve hostname")
+		return
 	}
 
 	// ensure data dir
@@ -210,6 +218,8 @@ func main() {
 						}
 					}
 				}
+				// assign via
+				e.Via = hostname
 				if buf, err = e.ToOperation().GobMarshal(); err != nil {
 					log.Error().Err(err).Msg("failed to marshal operation")
 					continue forLoop

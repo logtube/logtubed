@@ -16,6 +16,7 @@ type Event struct {
 	Crid      string                 `json:"crid"`              // correlation id
 	Message   string                 `json:"message,omitempty"` // the actual log message body
 	Keyword   string                 `json:"keyword"`           // comma separated keywords
+	Via       string                 `json:"via"`               // logtubed hostname
 	Extra     map[string]interface{} `json:"extra,omitempty"`   // extra structured data
 }
 
@@ -33,6 +34,7 @@ func (r Event) Map() (out map[string]interface{}) {
 	out["project"] = r.Project
 	out["topic"] = r.Topic
 	out["crid"] = r.Crid
+	out["via"] = r.Via
 	if len(r.Keyword) > 0 {
 		out["keyword"] = r.Keyword
 	}
