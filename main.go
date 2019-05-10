@@ -183,7 +183,7 @@ func main() {
 	input = MultiInput(inputs...)
 
 	// create buffer
-	buffer := make(chan Event, 1000)
+	buffer := make(chan Event, 10000)
 
 	waitSignal := make(chan os.Signal, 3)
 
