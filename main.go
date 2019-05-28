@@ -9,6 +9,8 @@ import (
 	"github.com/yankeguo/diskqueue"
 	"os"
 	"os/signal"
+	"runtime"
+	"runtime/pprof"
 	"strings"
 	"syscall"
 	"time"
@@ -30,6 +32,9 @@ var (
 
 	input  Input
 	output Output
+
+	// prof
+	cpuProfile string
 )
 
 func exit() {
@@ -37,6 +42,10 @@ func exit() {
 		log.Error().Err(err).Msg("exited")
 		os.Exit(1)
 	}
+}
+
+func init() {
+	runtime.GOMAXPROCS(runtime.NumCPU() * 5)
 }
 
 func main() {
@@ -50,11 +59,25 @@ func main() {
 	flag.StringVar(&optionsFile, "c", "/etc/logtubed.yml", "config file")
 	flag.BoolVar(&flagVerbose, "verbose", false, "enable verbose mode")
 	flag.BoolVar(&flagVersion, "version", false, "show version")
+	flag.StringVar(&cpuProfile, "cpu-profile", "", "cpu profile file")
 	flag.Parse()
 
 	if flagVersion {
 		fmt.Println("logtubed " + Version)
 		return
+	}
+
+	if len(cpuProfile) != 0 {
+		var f *os.File
+		if f, err = os.Create(cpuProfile); err != nil {
+			log.Error().Err(err).Msg("could not create CPU profile")
+			return
+		}
+		if err = pprof.StartCPUProfile(f); err != nil {
+			log.Error().Err(err).Msg("could not start CPU profile")
+			return
+		}
+		defer pprof.StopCPUProfile()
 	}
 
 	// load options
