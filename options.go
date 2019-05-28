@@ -43,9 +43,14 @@ type LocalOutputOptions struct {
 	Dir     string `yaml:"dir"`
 }
 
+type PProfOptions struct {
+	Bind string `yaml:"bind"`
+}
+
 // Options options for logtubed
 type Options struct {
 	Verbose     bool               `yaml:"verbose"`
+	PProf       PProfOptions       `yaml:"pprof"`
 	InputRedis  RedisInputOptions  `yaml:"input_redis"`
 	InputSPTP   SPTPInputOptions   `yaml:"input_sptp"`
 	Topics      TopicsOptions      `yaml:"topics"`
@@ -81,6 +86,7 @@ func LoadOptions(filename string) (opt Options, err error) {
 	defaultInt(&opt.OutputES.BatchRate, 1000)
 	defaultInt(&opt.OutputES.BatchBurst, 10000)
 	defaultStr(&opt.OutputLocal.Dir, "/var/log")
+	defaultStr(&opt.PProf.Bind, "0.0.0.0:6060")
 	return
 }
 

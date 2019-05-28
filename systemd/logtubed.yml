@@ -1,5 +1,8 @@
 verbose: false
 
+pprof:
+  bind: 0.0.0.0:6060
+
 input_redis:
   enabled: true
   bind: 0.0.0.0:6379

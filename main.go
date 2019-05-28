@@ -7,19 +7,18 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/yankeguo/diskqueue"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime"
-	"runtime/pprof"
 	"strings"
 	"syscall"
 	"time"
 )
 
 var (
-	Version    = "(UNKNOWN)"
-	CPUProfile string
-	MEMProfile string
+	Version = "(UNKNOWN)"
 )
 
 func exit(err *error) {
@@ -31,26 +30,6 @@ func exit(err *error) {
 
 func init() {
 	runtime.GOMAXPROCS(runtime.NumCPU() * 5)
-	CPUProfile = os.Getenv("LOGTUBED_CPU_PROFILE")
-	MEMProfile = os.Getenv("LOGTUBED_MEM_PROFILE")
-}
-
-func memProfileRoutine() {
-	schan := make(chan os.Signal, 1)
-	signal.Notify(schan, syscall.SIGUSR2)
-	for {
-		<-schan
-		var f *os.File
-		var err error
-		if f, err = os.Create(MEMProfile); err != nil {
-			log.Error().Err(err).Msg("could not create memory profile")
-		}
-		runtime.GC() // get up-to-date statistics
-		if err = pprof.WriteHeapProfile(f); err != nil {
-			log.Error().Err(err).Msg("could not write memory profile")
-		}
-		_ = f.Close()
-	}
 }
 
 func main() {
@@ -70,25 +49,6 @@ func main() {
 	)
 
 	defer exit(&err)
-
-	// cpu profile
-	if len(CPUProfile) != 0 {
-		var f *os.File
-		if f, err = os.Create(CPUProfile); err != nil {
-			log.Error().Err(err).Msg("could not create CPU profile")
-			return
-		}
-		if err = pprof.StartCPUProfile(f); err != nil {
-			log.Error().Err(err).Msg("could not start CPU profile")
-			return
-		}
-		defer pprof.StopCPUProfile()
-	}
-
-	// mem profile
-	if len(MEMProfile) != 0 {
-		go memProfileRoutine()
-	}
 
 	// init logger
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
@@ -122,6 +82,9 @@ func main() {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 	}
+
+	// start pprof http server
+	go http.ListenAndServe(options.PProf.Bind, nil)
 
 	// resolve hostname
 	if hostname, err = os.Hostname(); err != nil {
