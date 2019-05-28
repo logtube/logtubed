@@ -17,39 +17,78 @@ import (
 )
 
 var (
-	Version     = "(UNKNOWN)"
-	flagVersion bool
-	flagVerbose bool
-
-	err error
-
-	hostname string
-
-	optionsFile string
-	options     Options
-
-	queue diskqueue.DiskQueue
-
-	input  Input
-	output Output
-
-	// prof
-	cpuProfile string
+	Version    = "(UNKNOWN)"
+	CPUProfile string
+	MEMProfile string
 )
 
-func exit() {
-	if err != nil {
-		log.Error().Err(err).Msg("exited")
+func exit(err *error) {
+	if *err != nil {
+		log.Error().Err(*err).Msg("exited")
 		os.Exit(1)
 	}
 }
 
 func init() {
 	runtime.GOMAXPROCS(runtime.NumCPU() * 5)
+	CPUProfile = os.Getenv("LOGTUBED_CPU_PROFILE")
+	MEMProfile = os.Getenv("LOGTUBED_MEM_PROFILE")
+}
+
+func memProfileRoutine() {
+	schan := make(chan os.Signal, 1)
+	signal.Notify(schan, syscall.SIGUSR2)
+	for {
+		<-schan
+		var f *os.File
+		var err error
+		if f, err = os.Create(MEMProfile); err != nil {
+			log.Error().Err(err).Msg("could not create memory profile")
+		}
+		runtime.GC() // get up-to-date statistics
+		if err = pprof.WriteHeapProfile(f); err != nil {
+			log.Error().Err(err).Msg("could not write memory profile")
+		}
+		_ = f.Close()
+	}
 }
 
 func main() {
-	defer exit()
+	var (
+		err         error
+		hostname    string
+		flagVersion bool
+		flagVerbose bool
+
+		optionsFile string
+		options     Options
+
+		queue diskqueue.DiskQueue
+
+		input  Input
+		output Output
+	)
+
+	defer exit(&err)
+
+	// cpu profile
+	if len(CPUProfile) != 0 {
+		var f *os.File
+		if f, err = os.Create(CPUProfile); err != nil {
+			log.Error().Err(err).Msg("could not create CPU profile")
+			return
+		}
+		if err = pprof.StartCPUProfile(f); err != nil {
+			log.Error().Err(err).Msg("could not start CPU profile")
+			return
+		}
+		defer pprof.StopCPUProfile()
+	}
+
+	// mem profile
+	if len(MEMProfile) != 0 {
+		go memProfileRoutine()
+	}
 
 	// init logger
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
@@ -59,25 +98,11 @@ func main() {
 	flag.StringVar(&optionsFile, "c", "/etc/logtubed.yml", "config file")
 	flag.BoolVar(&flagVerbose, "verbose", false, "enable verbose mode")
 	flag.BoolVar(&flagVersion, "version", false, "show version")
-	flag.StringVar(&cpuProfile, "cpu-profile", "", "cpu profile file")
 	flag.Parse()
 
 	if flagVersion {
 		fmt.Println("logtubed " + Version)
 		return
-	}
-
-	if len(cpuProfile) != 0 {
-		var f *os.File
-		if f, err = os.Create(cpuProfile); err != nil {
-			log.Error().Err(err).Msg("could not create CPU profile")
-			return
-		}
-		if err = pprof.StartCPUProfile(f); err != nil {
-			log.Error().Err(err).Msg("could not start CPU profile")
-			return
-		}
-		defer pprof.StopCPUProfile()
 	}
 
 	// load options
