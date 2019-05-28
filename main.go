@@ -268,7 +268,7 @@ func main() {
 				}
 				// assign via
 				e.Via = hostname
-				if buf, err = e.ToOperation().GobMarshal(); err != nil {
+				if buf, err = e.ToOperation().DiskQueueMarshal(); err != nil {
 					log.Error().Err(err).Msg("failed to marshal operation")
 					continue forLoop
 				}
@@ -294,7 +294,7 @@ func main() {
 			case b := <-out:
 				var err error
 				var o Operation
-				if o, err = UnmarshalOperationGob(b); err != nil {
+				if o, err = DiskQueueUnmarshal(b); err != nil {
 					log.Error().Err(err).Msg("failed to unmarshal operation")
 					continue forLoop
 				}
