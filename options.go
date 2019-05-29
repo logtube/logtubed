@@ -44,7 +44,9 @@ type LocalOutputOptions struct {
 }
 
 type PProfOptions struct {
-	Bind string `yaml:"bind"`
+	Bind  string `yaml:"bind"`
+	Block int    `yaml:"block"`
+	Mutex int    `yaml:"mutex"`
 }
 
 // Options options for logtubed

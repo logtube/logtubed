@@ -83,6 +83,10 @@ func main() {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 	}
 
+	// configure mutex and block rate
+	runtime.SetMutexProfileFraction(options.PProf.Mutex)
+	runtime.SetBlockProfileRate(options.PProf.Block)
+
 	// start pprof http server
 	go http.ListenAndServe(options.PProf.Bind, nil)
 
