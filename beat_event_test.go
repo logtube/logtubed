@@ -53,3 +53,51 @@ func Test_decodeV2BeatMessage(t *testing.T) {
 		t.Fatal("failed to decode json crid")
 	}
 }
+
+func Test_decodeBeatSource(t *testing.T) {
+	var e Event
+	var ok bool
+
+	ok = decodeBeatSource("/home/tomcat/prod/x-redis-track/ms-order.20190022.log", &e)
+	if !ok {
+		t.Fatal("not ok")
+	}
+	if e.Env != "prod" {
+		t.Fatal("bad env")
+	}
+	if e.Topic != "x-redis-track" {
+		t.Fatal("bad topic")
+	}
+	if e.Project != "ms-order" {
+		t.Fatal("bad project")
+	}
+
+	ok = decodeBeatSource("/home/tomcat/prod/x-redis-track/test.x-mybatis-track.ms-order.20190022.log", &e)
+	if !ok {
+		t.Fatal("not ok")
+	}
+	if e.Env != "test" {
+		t.Fatal("bad env")
+	}
+	if e.Topic != "x-mybatis-track" {
+		t.Fatal("bad topic")
+	}
+	if e.Project != "ms-order" {
+		t.Fatal("bad project")
+	}
+
+	ok = decodeBeatSource("/home/tomcat/prod/x-redis-track/test.x-mybatis-track.ms-order.log", &e)
+	if !ok {
+		t.Fatal("not ok")
+	}
+	if e.Env != "test" {
+		t.Fatal("bad env")
+	}
+	if e.Topic != "x-mybatis-track" {
+		t.Fatal("bad topic")
+	}
+	if e.Project != "ms-order" {
+		t.Fatal("bad project")
+	}
+
+}

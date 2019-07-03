@@ -201,9 +201,20 @@ func decodeV1BeatMessage(raw string, isJSON bool, r *Event) (noOffset bool, ok b
 
 func decodeBeatSource(raw string, r *Event) bool {
 	var cs []string
-	// trim source
-	raw = strings.TrimSpace(raw)
-	if cs = strings.Split(raw, "/"); len(cs) < 3 {
+	// split source with / separator, fxxk windows
+	cs = strings.Split(strings.TrimSpace(raw), "/")
+	if len(cs) < 1 {
+		return false
+	}
+	// support for dot separated filename
+	filename := cs[len(cs)-1]
+	fnsplits := strings.Split(filename, ".")
+	if len(fnsplits) > 3 {
+		r.Env, r.Topic, r.Project = fnsplits[0], fnsplits[1], fnsplits[2]
+		return true
+	}
+	// check length
+	if len(cs) < 3 {
 		return false
 	}
 	// assign fields
