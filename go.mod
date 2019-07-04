@@ -16,7 +16,6 @@ require (
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/rs/zerolog v1.13.0
-	github.com/yankeguo/redcon v0.0.0-20190321081658-dc981ec4b1b0 // indirect
 	go.guoyk.net/byteflow v0.0.0-20190704054613-8a8d7fbd20c3
 	go.guoyk.net/diskqueue v0.0.0-20190704062644-2418dbd57136
 	go.guoyk.net/redcon v0.0.0-20190704063311-2a588e271dbf
