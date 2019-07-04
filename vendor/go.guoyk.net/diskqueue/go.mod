@@ -1,4 +1,4 @@
-module github.com/yankeguo/diskqueue
+module go.guoyk.net/diskqueue
 
 go 1.12
 

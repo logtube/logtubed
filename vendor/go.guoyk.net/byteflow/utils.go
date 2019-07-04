@@ -1,11 +1,11 @@
-package byteline
+package byteflow
 
 import (
 	"unicode"
 	"unicode/utf8"
 )
 
-func UTF8EndsWithSpace(buf []byte) bool {
+func utf8EndsWithSpace(buf []byte) bool {
 	r, _ := utf8.DecodeLastRune(buf)
 	if r == utf8.RuneError {
 		return false
@@ -13,7 +13,7 @@ func UTF8EndsWithSpace(buf []byte) bool {
 	return unicode.IsSpace(r)
 }
 
-func UTF8IndexOfRune(buf []byte, u rune) int {
+func utf8IndexOfRune(buf []byte, u rune) int {
 	var i int
 	for {
 		if r, s := utf8.DecodeRune(buf[i:]); r == utf8.RuneError {

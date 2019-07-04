@@ -1,12 +1,12 @@
-package byteline
+package byteflow
 
-type Operation interface {
+type Op interface {
 	// Execute process the bytes
 	Execute(in []byte) (out []byte, ok bool)
 }
 
 // Run run operations through a slice of bytes, returns result, ok and number of operations executed
-func Run(bytes []byte, ops ...Operation) ([]byte, int, bool) {
+func Run(bytes []byte, ops ...Op) ([]byte, int, bool) {
 	var ok bool
 	var i int
 	for _, op := range ops {

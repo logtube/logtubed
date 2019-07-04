@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/rs/zerolog/log"
-	"github.com/yankeguo/redcon"
+	"go.guoyk.net/redcon"
 	"strings"
 	"sync"
 	"sync/atomic"

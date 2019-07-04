@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/yankeguo/byteline"
+	"go.guoyk.net/byteflow"
 	"strings"
 	"time"
 )
@@ -115,14 +115,14 @@ func decodeV2BeatMessage(raw string, r *Event) (ok bool) {
 		return
 	} else {
 		// extract CRID, KEYWORD
-		if buf, _, ok = byteline.Run(
+		if buf, _, ok = byteflow.Run(
 			buf,
-			byteline.TrimOperation{Left: true, Right: true},
-			byteline.MarkDecodeOperation{Name: "CRID", Out: &r.Crid},
-			byteline.MarkDecodeOperation{Name: "K", Out: &r.Keyword, Combine: true, Separator: ","},
-			byteline.MarkDecodeOperation{Name: "KW", Out: &r.Keyword, Combine: true, Separator: ","},
-			byteline.MarkDecodeOperation{Name: "KEYWORD", Out: &r.Keyword, Combine: true, Separator: ","},
-			byteline.TrimOperation{Left: true, Right: true},
+			byteflow.TrimOp{Left: true, Right: true},
+			byteflow.MarkDecodeOp{Name: "CRID", Out: &r.Crid},
+			byteflow.MarkDecodeOp{Name: "K", Out: &r.Keyword, Combine: true, Separator: ","},
+			byteflow.MarkDecodeOp{Name: "KW", Out: &r.Keyword, Combine: true, Separator: ","},
+			byteflow.MarkDecodeOp{Name: "KEYWORD", Out: &r.Keyword, Combine: true, Separator: ","},
+			byteflow.TrimOp{Left: true, Right: true},
 		); !ok {
 			return
 		}
@@ -136,23 +136,23 @@ func decodeV2BeatMessage(raw string, r *Event) (ok bool) {
 func decodeV1BeatMessage(raw string, isJSON bool, r *Event) (noOffset bool, ok bool) {
 	var yyyy, MM, dd, hh, mm, ss, SSS int64
 	buf := []byte(raw)
-	if buf, _, ok = byteline.Run(
+	if buf, _, ok = byteflow.Run(
 		buf,
-		byteline.RuneOperation{Remove: true, Allowed: []rune{'['}},
-		byteline.NumberOperation{Remove: true, Len: 4, Base: 10, Out: &yyyy},
-		byteline.RuneOperation{Remove: true, Allowed: []rune{'-', '/'}},
-		byteline.NumberOperation{Remove: true, Len: 2, Base: 10, Out: &MM},
-		byteline.RuneOperation{Remove: true, Allowed: []rune{'-', '/'}},
-		byteline.NumberOperation{Remove: true, Len: 2, Base: 10, Out: &dd},
-		byteline.RuneOperation{Remove: true, Allowed: []rune{' ', '\t'}},
-		byteline.NumberOperation{Remove: true, Len: 2, Base: 10, Out: &hh},
-		byteline.RuneOperation{Remove: true, Allowed: []rune{':'}},
-		byteline.NumberOperation{Remove: true, Len: 2, Base: 10, Out: &mm},
-		byteline.RuneOperation{Remove: true, Allowed: []rune{':'}},
-		byteline.NumberOperation{Remove: true, Len: 2, Base: 10, Out: &ss},
-		byteline.RuneOperation{Remove: true, Allowed: []rune{'.'}},
-		byteline.NumberOperation{Remove: true, Len: 3, Base: 10, Out: &SSS},
-		byteline.RuneOperation{Remove: true, Allowed: []rune{']'}},
+		byteflow.RuneOp{Remove: true, Allowed: []rune{'['}},
+		byteflow.IntOp{Remove: true, Len: 4, Base: 10, Out: &yyyy},
+		byteflow.RuneOp{Remove: true, Allowed: []rune{'-', '/'}},
+		byteflow.IntOp{Remove: true, Len: 2, Base: 10, Out: &MM},
+		byteflow.RuneOp{Remove: true, Allowed: []rune{'-', '/'}},
+		byteflow.IntOp{Remove: true, Len: 2, Base: 10, Out: &dd},
+		byteflow.RuneOp{Remove: true, Allowed: []rune{' ', '\t'}},
+		byteflow.IntOp{Remove: true, Len: 2, Base: 10, Out: &hh},
+		byteflow.RuneOp{Remove: true, Allowed: []rune{':'}},
+		byteflow.IntOp{Remove: true, Len: 2, Base: 10, Out: &mm},
+		byteflow.RuneOp{Remove: true, Allowed: []rune{':'}},
+		byteflow.IntOp{Remove: true, Len: 2, Base: 10, Out: &ss},
+		byteflow.RuneOp{Remove: true, Allowed: []rune{'.'}},
+		byteflow.IntOp{Remove: true, Len: 3, Base: 10, Out: &SSS},
+		byteflow.RuneOp{Remove: true, Allowed: []rune{']'}},
 	); !ok {
 		return
 	}
@@ -160,10 +160,10 @@ func decodeV1BeatMessage(raw string, isJSON bool, r *Event) (noOffset bool, ok b
 	r.Timestamp = time.Date(int(yyyy), time.Month(MM), int(dd), int(hh), int(mm), int(ss), int(int64(time.Millisecond)*SSS), time.UTC)
 	// extract extra or CRID/K
 	if isJSON {
-		if buf, _, ok = byteline.Run(
+		if buf, _, ok = byteflow.Run(
 			buf,
-			byteline.TrimOperation{Left: true, Right: true},
-			byteline.JSONDecodeOperation{Remove: true, Out: &r.Extra},
+			byteflow.TrimOp{Left: true, Right: true},
+			byteflow.JSONDecodeOp{Remove: true, Out: &r.Extra},
 		); !ok {
 			return
 		}
@@ -182,14 +182,14 @@ func decodeV1BeatMessage(raw string, isJSON bool, r *Event) (noOffset bool, ok b
 		// clear the message
 		r.Message = ""
 	} else {
-		if buf, _, ok = byteline.Run(
+		if buf, _, ok = byteflow.Run(
 			buf,
-			byteline.TrimOperation{Left: true, Right: true},
-			byteline.MarkDecodeOperation{Name: "CRID", Out: &r.Crid},
-			byteline.MarkDecodeOperation{Name: "K", Out: &r.Keyword, Combine: true, Separator: ","},
-			byteline.MarkDecodeOperation{Name: "KW", Out: &r.Keyword, Combine: true, Separator: ","},
-			byteline.MarkDecodeOperation{Name: "KEYWORD", Out: &r.Keyword, Combine: true, Separator: ","},
-			byteline.TrimOperation{Left: true, Right: true},
+			byteflow.TrimOp{Left: true, Right: true},
+			byteflow.MarkDecodeOp{Name: "CRID", Out: &r.Crid},
+			byteflow.MarkDecodeOp{Name: "K", Out: &r.Keyword, Combine: true, Separator: ","},
+			byteflow.MarkDecodeOp{Name: "KW", Out: &r.Keyword, Combine: true, Separator: ","},
+			byteflow.MarkDecodeOp{Name: "KEYWORD", Out: &r.Keyword, Combine: true, Separator: ","},
+			byteflow.TrimOp{Left: true, Right: true},
 		); !ok {
 			return
 		}

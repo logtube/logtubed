@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/logtube/sptp"
 	"github.com/rs/zerolog/log"
+	"go.guoyk.net/sptp"
 	"net"
 )
 

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/yankeguo/diskqueue"
+	"go.guoyk.net/diskqueue"
 	"net/http"
 	_ "net/http/pprof"
 	"os"

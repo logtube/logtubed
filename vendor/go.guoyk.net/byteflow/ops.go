@@ -1,4 +1,4 @@
-package byteline
+package byteflow
 
 import (
 	"bytes"
@@ -8,12 +8,12 @@ import (
 	"unicode/utf8"
 )
 
-type TrimOperation struct {
+type TrimOp struct {
 	Left  bool
 	Right bool
 }
 
-func (o TrimOperation) Execute(in []byte) (out []byte, ok bool) {
+func (o TrimOp) Execute(in []byte) (out []byte, ok bool) {
 	// assign out as in
 	out = in
 	// always ok
@@ -29,13 +29,13 @@ func (o TrimOperation) Execute(in []byte) (out []byte, ok bool) {
 	return
 }
 
-type RuneOperation struct {
+type RuneOp struct {
 	Remove  bool
 	Allowed []rune
 	Out     *rune
 }
 
-func (o RuneOperation) Execute(in []byte) (out []byte, ok bool) {
+func (o RuneOp) Execute(in []byte) (out []byte, ok bool) {
 	// assign out as in
 	out = in
 	// decode rune
@@ -72,14 +72,14 @@ func (o RuneOperation) Execute(in []byte) (out []byte, ok bool) {
 	return
 }
 
-type NumberOperation struct {
+type IntOp struct {
 	Remove bool
 	Base   int
 	Len    int
 	Out    *int64
 }
 
-func (o NumberOperation) Execute(in []byte) (out []byte, ok bool) {
+func (o IntOp) Execute(in []byte) (out []byte, ok bool) {
 	// assign out as in
 	out = in
 	// check length
@@ -103,14 +103,14 @@ func (o NumberOperation) Execute(in []byte) (out []byte, ok bool) {
 	return
 }
 
-type MarkDecodeOperation struct {
+type MarkDecodeOp struct {
 	Name      string
 	Out       *string
 	Combine   bool
 	Separator string
 }
 
-func (o MarkDecodeOperation) Execute(in []byte) (out []byte, ok bool) {
+func (o MarkDecodeOp) Execute(in []byte) (out []byte, ok bool) {
 	// assign out as in
 	out = in
 	// ok is always true
@@ -136,11 +136,11 @@ func (o MarkDecodeOperation) Execute(in []byte) (out []byte, ok bool) {
 		// match prefix
 		if bytes.HasPrefix(out[i:], prefix) {
 			// if mark is at the first, or has a leading space
-			if i == 0 || UTF8EndsWithSpace(out[0:i]) {
+			if i == 0 || utf8EndsWithSpace(out[0:i]) {
 				// skip the prefix
 				i += len(prefix)
 				// search the suffix
-				if s := UTF8IndexOfRune(out[i:], suffix); s > 0 {
+				if s := utf8IndexOfRune(out[i:], suffix); s > 0 {
 					// handle the output
 					if o.Out != nil {
 						if o.Combine && len(*o.Out) > 0 {
@@ -175,12 +175,12 @@ func (o MarkDecodeOperation) Execute(in []byte) (out []byte, ok bool) {
 	return
 }
 
-type JSONDecodeOperation struct {
+type JSONDecodeOp struct {
 	Remove bool
 	Out    *map[string]interface{}
 }
 
-func (o JSONDecodeOperation) Execute(in []byte) (out []byte, ok bool) {
+func (o JSONDecodeOp) Execute(in []byte) (out []byte, ok bool) {
 	// assign in to out
 	out = in
 	// decode
