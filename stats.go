@@ -59,11 +59,11 @@ func sumStatsRing(r *ring.Ring) (out []map[string]interface{}) {
 	}
 	// collect data, current data is skipped
 	for i := 1; i < n; i++ {
+		r = r.Prev()
 		out = append(out, map[string]interface{}{
 			"time":  formatStatsTime(-10 * i),
 			"value": atomic.LoadUint64(r.Value.(*uint64)),
 		})
-		r = r.Prev()
 	}
 	// reverse
 	for i, j := 0, len(out)-1; i < j; i, j = i+1, j-1 {
