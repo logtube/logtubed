@@ -37,12 +37,9 @@ type State map[string]bool
 
 var (
 	optOptions string
-	optState   string
 
 	options Options
-	state   State
 
-	changed bool
 	message string
 )
 
@@ -85,45 +82,12 @@ func loadJSON(file string, out interface{}) (err error) {
 	return
 }
 
-func saveJSON(file string, in interface{}) (err error) {
-	var buf []byte
-	if buf, err = json.Marshal(in); err != nil {
-		return
-	}
-	err = ioutil.WriteFile(file, buf, 0640)
-	return
-}
-
-func raiseAlert(id string, m string) {
-	a := state[id]
-
-	// check and update
-	if !a {
-		changed = true
-		state[id] = true
-	}
-
-	// append final message
+func appendMessage(format string, item ...interface{}) {
 	if len(message) > 0 {
 		message = message + "\n"
 	}
-	message = message + m
-}
-
-func clearAlert(id string, m string) {
-	a := state[id]
-
-	// check and update
-	if a {
-		changed = true
-		state[id] = false
-	}
-
-	// append final message
-	if len(message) > 0 {
-		message = message + "\n"
-	}
-	message = message + m
+	message = message + fmt.Sprintf(format, item...)
+	log.Printf(format+"\n", item...)
 }
 
 func exit(err *error) {
@@ -138,70 +102,46 @@ func main() {
 	defer exit(&err)
 
 	flag.StringVar(&optOptions, "c", "/etc/logtubemon.json", "config file for logtubemon")
-	flag.StringVar(&optState, "s", "/var/lib/logtubemon.state", "state file for logtubemon")
 	flag.Parse()
 
 	// load config and state
 	if err = loadJSON(optOptions, &options); err != nil {
 		return
 	}
-	if err = loadJSON(optState, &state); err != nil {
-		return
-	}
-
-	if state == nil {
-		state = State{}
-	}
-	defer saveJSON(optState, state)
-
-	var all []LogtubeStats
 
 	// check logtubed status
 	for i, url := range options.LogtubeStatsEndpoints {
 		// fetch stats
 		var d LogtubeStats
 		if err = getJSON(url, &d); err != nil {
-			raiseAlert(fmt.Sprintf("logtube-connect-%d", i), fmt.Sprintf("x️ Logtubed %d 连接性: %s", i+1, err.Error()))
-			log.Printf("Logtubed %d connectivity: %s\n", i+1, err.Error())
+			appendMessage("❌ Logtubed %d 无法监控: %s", i+1, err.Error())
 			continue
-		} else {
-			clearAlert(fmt.Sprintf("logtube-connect-%d", i), fmt.Sprintf("√ Logtubed %d 连接性", i+1))
 		}
-		//save
-		all = append(all, d)
 		if len(d.QueueDepth) < 1 {
 			continue
 		}
 		// check queue depth
 		depth := d.QueueDepth[len(d.QueueDepth)-1].Value
 		if depth > 100000 {
-			log.Printf("Logtubed %d depth: %d\n", i+1, depth)
-			raiseAlert(fmt.Sprintf("logtube-queue-%d", i), fmt.Sprintf("x️ Logtubed %d 队列深度: %d", i+1, depth))
-		} else {
-			clearAlert(fmt.Sprintf("logtube-queue-%d", i), fmt.Sprintf("√ Logtubed %d 队列深度: %d", i+1, depth))
+			appendMessage("❌ Logtubed %d 队列过深: %d", i+1, depth)
 		}
 	}
 
-	// check es
+	// check es health
 	for i, url := range options.ESHealthEndpoints {
 		// fetch health
 		var h ESHealth
 		if err = getJSON(url, &h); err != nil {
-			raiseAlert(fmt.Sprintf("es-connect-%d", i), fmt.Sprintf("x️ ES %d 连接性: %s", i+1, err.Error()))
-			log.Printf("ES %d connectivity: %s", i+1, err.Error())
+			appendMessage("❌️ ES %d 无法连接: %s", i+1, err.Error())
 			continue
-		} else {
-			clearAlert(fmt.Sprintf("es-connect-%d", i), fmt.Sprintf("√ ES %d 连接性", i))
 		}
 		// check number of nodes
 		if h.NumberOfNodes != len(options.ESHealthEndpoints) {
-			raiseAlert(fmt.Sprintf("es-nodes-%d", i), fmt.Sprintf("x️ ES %d 报告节点数: %d", i+1, h.NumberOfNodes))
-		} else {
-			clearAlert(fmt.Sprintf("es-nodes-%d", i), fmt.Sprintf("√ ES %d 报告节点数: %d", i+1, h.NumberOfNodes))
+			appendMessage("❌️ ES %d 节点数异常: %d", i+1, h.NumberOfNodes)
 		}
 	}
 
-	if changed {
+	if len(message) > 0 {
 		_ = postJSON(options.URL, map[string]interface{}{
 			"msgtype": "text",
 			"text": map[string]interface{}{
