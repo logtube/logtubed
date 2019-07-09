@@ -29,6 +29,7 @@ type ESHealth struct {
 
 type Options struct {
 	URL                   string   `json:"url"`
+	QueueThreshold        uint64   `json:"queue_threshold"`
 	LogtubeStatsEndpoints []string `json:"logtube_stats_endpoints"`
 	ESHealthEndpoints     []string `json:"es_health_endpoints"`
 }
@@ -122,7 +123,7 @@ func main() {
 		}
 		// check queue depth
 		depth := d.QueueDepth[len(d.QueueDepth)-1].Value
-		if depth > 100000 {
+		if depth > options.QueueThreshold {
 			appendMessage("❌ Logtubed %d 队列过深: %d", i+1, depth)
 		}
 	}
