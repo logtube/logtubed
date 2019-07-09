@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 )
@@ -75,7 +76,7 @@ func postJSON(url string, in interface{}) (err error) {
 func loadJSON(file string, out interface{}) (err error) {
 	var buf []byte
 	if buf, err = ioutil.ReadFile(file); err != nil {
-		if err == os.ErrNotExist {
+		if os.IsNotExist(err) {
 			err = nil
 		}
 		return
@@ -125,8 +126,16 @@ func clearAlert(id string, m string) {
 	message = message + m
 }
 
+func exit(err *error) {
+	if *err != nil {
+		log.Println((*err).Error())
+		os.Exit(1)
+	}
+}
+
 func main() {
 	var err error
+	defer exit(&err)
 
 	flag.StringVar(&optOptions, "c", "/etc/logtubemon.json", "config file for logtubemon")
 	flag.StringVar(&optState, "s", "/var/lib/logtubemon.state", "state file for logtubemon")
@@ -152,10 +161,11 @@ func main() {
 		// fetch stats
 		var d LogtubeStats
 		if err = getJSON(url, &d); err != nil {
-			raiseAlert(fmt.Sprintf("logtube-connect-%d", i), fmt.Sprintf("⛔️ Logtubed %d 连接性: %s", i, err.Error()))
+			raiseAlert(fmt.Sprintf("logtube-connect-%d", i), fmt.Sprintf("x️ Logtubed %d 连接性: %s", i+1, err.Error()))
+			log.Printf("Logtubed %d connectivity: %s\n", i+1, err.Error())
 			continue
 		} else {
-			clearAlert(fmt.Sprintf("logtube-connect-%d", i), fmt.Sprintf("✅ Logtubed %d 连接性", i))
+			clearAlert(fmt.Sprintf("logtube-connect-%d", i), fmt.Sprintf("√ Logtubed %d 连接性", i+1))
 		}
 		//save
 		all = append(all, d)
@@ -164,10 +174,11 @@ func main() {
 		}
 		// check queue depth
 		depth := d.QueueDepth[len(d.QueueDepth)-1].Value
-		if depth < 10000 {
-			raiseAlert(fmt.Sprintf("logtube-queue-%d", i), fmt.Sprintf("⛔️ Logtubed %d 队列深度: %d", i, depth))
+		if depth > 100000 {
+			log.Printf("Logtubed %d depth: %d\n", i+1, depth)
+			raiseAlert(fmt.Sprintf("logtube-queue-%d", i), fmt.Sprintf("x️ Logtubed %d 队列深度: %d", i+1, depth))
 		} else {
-			clearAlert(fmt.Sprintf("logtube-queue-%d", i), fmt.Sprintf("✅ Logtubed %d 队列深度: %d", i, depth))
+			clearAlert(fmt.Sprintf("logtube-queue-%d", i), fmt.Sprintf("√ Logtubed %d 队列深度: %d", i+1, depth))
 		}
 	}
 
@@ -176,16 +187,17 @@ func main() {
 		// fetch health
 		var h ESHealth
 		if err = getJSON(url, &h); err != nil {
-			raiseAlert(fmt.Sprintf("es-connect-%d", i), fmt.Sprintf("⛔️ ES %d 连接性: %s", i, err.Error()))
+			raiseAlert(fmt.Sprintf("es-connect-%d", i), fmt.Sprintf("x️ ES %d 连接性: %s", i+1, err.Error()))
+			log.Printf("ES %d connectivity: %s", i+1, err.Error())
 			continue
 		} else {
-			clearAlert(fmt.Sprintf("es-connect-%d", i), fmt.Sprintf("✅ ES %d 连接性", i))
+			clearAlert(fmt.Sprintf("es-connect-%d", i), fmt.Sprintf("√ ES %d 连接性", i))
 		}
 		// check number of nodes
 		if h.NumberOfNodes != len(options.ESHealthEndpoints) {
-			raiseAlert(fmt.Sprintf("es-nodes-%d", i), fmt.Sprintf("⛔️ ES %d 报告节点数: %d", i, h.NumberOfNodes))
+			raiseAlert(fmt.Sprintf("es-nodes-%d", i), fmt.Sprintf("x️ ES %d 报告节点数: %d", i+1, h.NumberOfNodes))
 		} else {
-			clearAlert(fmt.Sprintf("es-nodes-%d", i), fmt.Sprintf("✅ ES %d 报告节点数: %d", i, h.NumberOfNodes))
+			clearAlert(fmt.Sprintf("es-nodes-%d", i), fmt.Sprintf("√ ES %d 报告节点数: %d", i+1, h.NumberOfNodes))
 		}
 	}
 
