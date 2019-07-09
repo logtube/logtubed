@@ -44,6 +44,8 @@ func main() {
 
 		queue diskqueue.DiskQueue
 
+		stats *Stats
+
 		input  Input
 		output Output
 	)
@@ -87,9 +89,6 @@ func main() {
 	runtime.SetMutexProfileFraction(options.PProf.Mutex)
 	runtime.SetBlockProfileRate(options.PProf.Block)
 
-	// start pprof http server
-	go http.ListenAndServe(options.PProf.Bind, nil)
-
 	// resolve hostname
 	if hostname, err = os.Hostname(); err != nil {
 		log.Error().Err(err).Msg("failed to retrieve hostname")
@@ -117,6 +116,14 @@ func main() {
 	log.Info().Str("name", options.Queue.Name).Msg("queue created")
 
 	defer queue.Close() // close queue at last
+
+	// create stats
+	stats = NewStats(queue)
+	go stats.Routine()
+
+	// start debug http server, with pprof and stats
+	http.HandleFunc("/stats", stats.Handler)
+	go http.ListenAndServe(options.PProf.Bind, nil)
 
 	// create outputs
 	outputs := make([]Output, 0)
@@ -235,14 +242,18 @@ func main() {
 				}
 				// assign via
 				e.Via = hostname
+				// marshal operation
 				if buf, err = e.ToOperation().DiskQueueMarshal(); err != nil {
 					log.Error().Err(err).Msg("failed to marshal operation")
 					continue forLoop
 				}
+				// put operation to diskqueue
 				if err = queue.Put(buf); err != nil {
 					log.Error().Err(err).Msg("failed to queue operation")
 					continue forLoop
 				}
+				// increase stats
+				stats.IncrQueueIn()
 			case <-shutTrans:
 				break forLoop
 			}
@@ -261,10 +272,14 @@ func main() {
 			case b := <-out:
 				var err error
 				var o Operation
+				// increase stats
+				stats.IncrQueueOut()
+				// unmarshal operation
 				if o, err = DiskQueueUnmarshal(b); err != nil {
 					log.Error().Err(err).Msg("failed to unmarshal operation")
 					continue forLoop
 				}
+				// output operation
 				if err = output.Put(o); err != nil {
 					log.Error().Err(err).Msg("failed to put output")
 					continue forLoop
