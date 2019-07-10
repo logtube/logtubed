@@ -73,16 +73,15 @@ func sumStatsRing(r *ring.Ring) (out []map[string]interface{}) {
 }
 
 func (s *Stats) Routine() {
+	t := time.Tick(10 * time.Second)
 	for {
-		// 不直接使用 time.Sleep(10*time.Second)，防止误差放大
-		// duration to next 10 second border
-		d := time.Second * time.Duration(10-(time.Now().Unix()%10))
-		// wait to next 10 seconds border
-		time.Sleep(d)
-		// update dataDepth
-		atomic.StoreUint64(s.dataDepth.Value.(*uint64), uint64(s.queue.Depth()))
-		// rotate the ring
-		s.Rotate()
+		select {
+		case <-t:
+			// update dataDepth
+			atomic.StoreUint64(s.dataDepth.Value.(*uint64), uint64(s.queue.Depth()))
+			// rotate the ring
+			s.Rotate()
+		}
 	}
 }
 
