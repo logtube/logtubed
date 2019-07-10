@@ -17,7 +17,7 @@ var (
 
 func main() {
 	flag.StringVar(&optBind, "b", ":8090", "bind address")
-	flag.StringVar(&optPath, "p", "/logtubedash", "subpath")
+	flag.StringVar(&optPath, "p", "/logtubedash/api/stats", "path")
 	flag.StringVar(&optEndpoints, "e", "", "endpoints, comma separated, http://10.10.10.10:6060/stats")
 	flag.Parse()
 
@@ -51,6 +51,7 @@ func route(rw http.ResponseWriter, r *http.Request) {
 			io.WriteString(rw, err.Error())
 			return
 		}
+		out = append(out, stat)
 	}
 	var buf []byte
 	if buf, err = json.Marshal(out); err != nil {
