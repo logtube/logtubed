@@ -11,6 +11,7 @@ cp -rf systemd dist
 
 GO111MODULE=off CGO_ENABLED=0 go build -ldflags "-X main.Version=`date -u +%Y-%m-%d_%H-%M-%S`" -o dist/logtubed
 cd logtubemon && GO111MODULE=off CGO_ENABLED=0 go build -o ../dist/logtubemon && cd ..
+cd logtubedash && GO111MODULE=off CGO_ENABLED=0 go build -o ../dist/logtubedash && cd ..
 
 cp -rf scripts/_install.sh dist/install.sh
 

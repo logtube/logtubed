@@ -20,6 +20,10 @@ require (
 	go.guoyk.net/diskqueue v0.0.0-20190704062644-2418dbd57136
 	go.guoyk.net/redcon v0.0.0-20190704063311-2a588e271dbf
 	go.guoyk.net/sptp v0.0.0-20190704061311-99f910c9cb12
+	golang.org/x/net v0.0.0-20190607181551-461777fb6f67 // indirect
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
+	golang.org/x/sys v0.0.0-20190609082536-301114b31cce // indirect
+	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 )
