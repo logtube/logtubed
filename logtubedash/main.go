@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"io"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"go.guoyk.net/binfs/binfsecho"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -11,18 +13,27 @@ import (
 
 var (
 	optBind      string
-	optPath      string
 	optEndpoints string
+)
+
+const (
+	PREFIX = "/logtubedash"
 )
 
 func main() {
 	flag.StringVar(&optBind, "b", ":8090", "bind address")
-	flag.StringVar(&optPath, "p", "/logtubedash/api/stats", "path")
-	flag.StringVar(&optEndpoints, "e", "", "endpoints, comma separated, http://10.10.10.10:6060/stats")
+	flag.StringVar(&optEndpoints, "e", "http://127.0.0.1:6060/stats", "endpoints, comma separated, http://127.0.0.1:6060/stats")
 	flag.Parse()
 
-	http.HandleFunc(optPath, route)
-	_ = http.ListenAndServe(optBind, nil)
+	e := echo.New()
+	e.HidePort = true
+	e.HideBanner = true
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+	e.Static(PREFIX, "public")
+	e.Use(binfsecho.StaticWithConfig(binfsecho.StaticConfig{Prefix: PREFIX, Root: "public",}))
+	e.GET(PREFIX+"/api/stats", route)
+	e.Start(optBind)
 }
 
 func getJSON(url string, out interface{}) (err error) {
@@ -39,27 +50,16 @@ func getJSON(url string, out interface{}) (err error) {
 	return
 }
 
-func route(rw http.ResponseWriter, r *http.Request) {
-	var err error
+func route(ctx echo.Context) (err error) {
 	var out []map[string]interface{}
 	endpoints := strings.Split(optEndpoints, ",")
 	for _, endpoint := range endpoints {
+		endpoint = strings.TrimSpace(endpoint)
 		var stat map[string]interface{}
 		if err = getJSON(endpoint, &stat); err != nil {
-			rw.Header().Set("Content-Type", "text/plain")
-			rw.WriteHeader(http.StatusInternalServerError)
-			io.WriteString(rw, err.Error())
 			return
 		}
 		out = append(out, stat)
 	}
-	var buf []byte
-	if buf, err = json.Marshal(out); err != nil {
-		rw.Header().Set("Content-Type", "text/plain")
-		rw.WriteHeader(http.StatusInternalServerError)
-		io.WriteString(rw, err.Error())
-		return
-	}
-	rw.Header().Set("Content-Type", "application/json")
-	rw.Write(buf)
+	return ctx.JSON(http.StatusOK, out)
 }

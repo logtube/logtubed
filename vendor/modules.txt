@@ -1,3 +1,5 @@
+# github.com/dgrijalva/jwt-go v3.2.0+incompatible
+github.com/dgrijalva/jwt-go
 # github.com/go-redis/redis v6.15.2+incompatible
 github.com/go-redis/redis
 github.com/go-redis/redis/internal
@@ -10,29 +12,60 @@ github.com/go-redis/redis/internal/util
 github.com/go-yaml/yaml
 # github.com/juju/ratelimit v1.0.1
 github.com/juju/ratelimit
+# github.com/labstack/echo/v4 v4.1.6
+github.com/labstack/echo/v4
+github.com/labstack/echo/v4/middleware
+# github.com/labstack/gommon v0.2.9
+github.com/labstack/gommon/color
+github.com/labstack/gommon/log
+github.com/labstack/gommon/bytes
+github.com/labstack/gommon/random
 # github.com/logtube/sptp v0.0.0-20190408044823-ae67543173a2
 github.com/logtube/sptp
-# github.com/mailru/easyjson v0.0.0-20190312143242-1de009706dbe
+# github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983
 github.com/mailru/easyjson
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
 github.com/mailru/easyjson/buffer
-# github.com/olivere/elastic v6.2.16+incompatible
+# github.com/mattn/go-colorable v0.1.2
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.8
+github.com/mattn/go-isatty
+# github.com/olivere/elastic v6.2.18+incompatible
 github.com/olivere/elastic
 github.com/olivere/elastic/config
 github.com/olivere/elastic/uritemplates
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
-# github.com/rs/zerolog v1.13.0
+# github.com/rs/zerolog v1.14.3
 github.com/rs/zerolog
 github.com/rs/zerolog/log
 github.com/rs/zerolog/internal/cbor
 github.com/rs/zerolog/internal/json
-# go.guoyk.net/byteflow v0.0.0-20190704054613-8a8d7fbd20c3
+# github.com/valyala/bytebufferpool v1.0.0
+github.com/valyala/bytebufferpool
+# github.com/valyala/fasttemplate v1.0.1
+github.com/valyala/fasttemplate
+# go.guoyk.net/binfs v0.0.0-20190710072921-607a04b36952
+go.guoyk.net/binfs
+go.guoyk.net/binfs/binfsecho
+# go.guoyk.net/byteflow v0.0.0-20190705174354-034b6f547dc4
 go.guoyk.net/byteflow
-# go.guoyk.net/diskqueue v0.0.0-20190704062644-2418dbd57136
+# go.guoyk.net/diskqueue v0.0.0-20190705174048-447fbf73a2ec
 go.guoyk.net/diskqueue
-# go.guoyk.net/redcon v0.0.0-20190704063311-2a588e271dbf
+# go.guoyk.net/redcon v0.0.0-20190705174313-72c12b4cebf5
 go.guoyk.net/redcon
-# go.guoyk.net/sptp v0.0.0-20190704061311-99f910c9cb12
+# go.guoyk.net/sptp v0.0.0-20190705174228-6564e6677592
 go.guoyk.net/sptp
+# golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
+golang.org/x/crypto/acme
+golang.org/x/crypto/acme/autocert
+# golang.org/x/net v0.0.0-20190628185345-da137c7871d7
+golang.org/x/net/idna
+# golang.org/x/sys v0.0.0-20190626221950-04f50cda93cb
+golang.org/x/sys/unix
+# golang.org/x/text v0.3.2
+golang.org/x/text/secure/bidirule
+golang.org/x/text/unicode/bidi
+golang.org/x/text/unicode/norm
+golang.org/x/text/transform
