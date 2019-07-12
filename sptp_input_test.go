@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/logtube/sptp"
+	"go.guoyk.net/sptp"
 	"net"
 	"reflect"
 	"sync"

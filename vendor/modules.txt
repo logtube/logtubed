@@ -20,8 +20,6 @@ github.com/labstack/gommon/color
 github.com/labstack/gommon/log
 github.com/labstack/gommon/bytes
 github.com/labstack/gommon/random
-# github.com/logtube/sptp v0.0.0-20190408044823-ae67543173a2
-github.com/logtube/sptp
 # github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983
 github.com/mailru/easyjson
 github.com/mailru/easyjson/jlexer
@@ -46,16 +44,16 @@ github.com/rs/zerolog/internal/json
 github.com/valyala/bytebufferpool
 # github.com/valyala/fasttemplate v1.0.1
 github.com/valyala/fasttemplate
-# go.guoyk.net/binfs v0.0.0-20190710072921-607a04b36952
+# go.guoyk.net/binfs v1.0.0
 go.guoyk.net/binfs
 go.guoyk.net/binfs/binfsecho
-# go.guoyk.net/byteflow v0.0.0-20190705174354-034b6f547dc4
+# go.guoyk.net/byteflow v1.0.0
 go.guoyk.net/byteflow
-# go.guoyk.net/diskqueue v0.0.0-20190705174048-447fbf73a2ec
+# go.guoyk.net/diskqueue v1.0.0
 go.guoyk.net/diskqueue
-# go.guoyk.net/redcon v0.0.0-20190705174313-72c12b4cebf5
+# go.guoyk.net/redcon v1.0.0
 go.guoyk.net/redcon
-# go.guoyk.net/sptp v0.0.0-20190705174228-6564e6677592
+# go.guoyk.net/sptp v1.0.0
 go.guoyk.net/sptp
 # golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 golang.org/x/crypto/acme
