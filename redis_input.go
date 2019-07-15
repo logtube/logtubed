@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/rs/zerolog/log"
 	"go.guoyk.net/redcon"
@@ -10,9 +11,9 @@ import (
 )
 
 type RedisInput struct {
-	Options RedisInputOptions
-
-	server *redcon.Server
+	optBind       string
+	optMulti      bool
+	optTimeOffset int
 
 	connsCount    int64
 	connsSum      map[string]int
@@ -21,7 +22,10 @@ type RedisInput struct {
 
 func NewRedisInput(options RedisInputOptions) (o *RedisInput, err error) {
 	o = &RedisInput{
-		Options:       options,
+		optBind:       options.Bind,
+		optMulti:      options.Multi,
+		optTimeOffset: options.TimeOffset,
+
 		connsSum:      map[string]int{},
 		connsSumMutex: &sync.Mutex{},
 	}
@@ -52,7 +56,7 @@ func (r *RedisInput) decreaseConnsSum(addr string) int {
 	return r.connsSum[i]
 }
 
-func (r *RedisInput) consumeRawEvent(raw []byte, queue chan Event) {
+func (r *RedisInput) consumeRawEvent(raw []byte, queue Queue) {
 	// ignore event > 1mb
 	if len(raw) > 1000000 {
 		return
@@ -69,15 +73,15 @@ func (r *RedisInput) consumeRawEvent(raw []byte, queue chan Event) {
 		return
 	}
 	// convert to record
-	if record, ok := event.ToEvent(r.Options.TimeOffset); ok {
+	if record, ok := event.ToEvent(r.optTimeOffset); ok {
 		log.Debug().Str("input", "redis").Interface("event", record).Msg("new event")
-		queue <- record
+		_ = queue.PutEvent(record)
 	} else {
 		log.Debug().Str("event", string(raw)).Msg("failed to convert record")
 	}
 }
 
-func (r *RedisInput) handle(conn redcon.Conn, cmd redcon.Command, queue chan Event) {
+func (r *RedisInput) handle(conn redcon.Conn, cmd redcon.Command, queue Queue) {
 	// empty arguments, not possible
 	if len(cmd.Args) == 0 {
 		conn.WriteError("ERR bad command")
@@ -97,7 +101,7 @@ func (r *RedisInput) handle(conn redcon.Conn, cmd redcon.Command, queue chan Eve
 		conn.WriteString("OK")
 		_ = conn.Close()
 	case "info":
-		if r.Options.Multi {
+		if r.optMulti {
 			// declare as redis 2.4+, supports multiple values in RPUSH/LPUSH
 			conn.WriteString("redis_version:2.4\r\n")
 		} else {
@@ -114,55 +118,57 @@ func (r *RedisInput) handle(conn redcon.Conn, cmd redcon.Command, queue chan Eve
 		for _, raw := range cmd.Args[2:] {
 			r.consumeRawEvent(raw, queue)
 		}
-		conn.WriteInt64(int64(len(queue)))
+		conn.WriteInt64(queue.Depth())
 	case "llen":
-		conn.WriteInt64(int64(len(queue)))
+		conn.WriteInt64(queue.Depth())
 	}
 }
 
-func (r *RedisInput) Close() error {
-	if r.server != nil {
-		return r.server.Close()
+func (r *RedisInput) handleCommand(queue Queue) func(conn redcon.Conn, cmd redcon.Command) {
+	return func(conn redcon.Conn, cmd redcon.Command) {
+		r.handle(conn, cmd, queue)
 	}
-	return nil
 }
 
-func (r *RedisInput) Run(queue chan Event) (err error) {
-	r.server = redcon.NewServer(
-		r.Options.Bind,
-		func(conn redcon.Conn, cmd redcon.Command) {
-			r.handle(conn, cmd, queue)
-		},
-		func(conn redcon.Conn) bool {
-			log.Info().Int64(
-				"conns",
-				r.increaseConnsCount(),
-			).Int(
-				"conns-dup",
-				r.increaseConnsSum(conn.RemoteAddr()),
-			).Str(
-				"addr",
-				conn.RemoteAddr(),
-			).Msg("connection established")
-			return true
-		},
-		func(conn redcon.Conn, err error) {
-			log.Info().Err(err).Int64(
-				"conns",
-				r.decreaseConnsCount(),
-			).Int(
-				"conns-dup",
-				r.decreaseConnsSum(conn.RemoteAddr()),
-			).Str(
-				"addr",
-				conn.RemoteAddr(),
-			).Msg("connection closed")
-		},
-	)
+func (r *RedisInput) handleConnect(conn redcon.Conn) bool {
+	log.Info().Int64(
+		"conns",
+		r.increaseConnsCount(),
+	).Int(
+		"conns-dup",
+		r.increaseConnsSum(conn.RemoteAddr()),
+	).Str(
+		"addr",
+		conn.RemoteAddr(),
+	).Msg("connection established")
+	return true
+}
 
+func (r *RedisInput) handleDisconnect(conn redcon.Conn, err error) {
+	log.Info().Err(err).Int64(
+		"conns",
+		r.decreaseConnsCount(),
+	).Int(
+		"conns-dup",
+		r.decreaseConnsSum(conn.RemoteAddr()),
+	).Str(
+		"addr",
+		conn.RemoteAddr(),
+	).Msg("connection closed")
+}
+
+func (r *RedisInput) Run(ctx context.Context, cancel context.CancelFunc, queue Queue) (err error) {
+	s := redcon.NewServer(r.optBind, r.handleCommand(queue), r.handleConnect, r.handleDisconnect)
 	setup := make(chan error, 1)
-	_ = r.server.ListenServeAndSignal(setup)
-	err = <-setup
+	go func() {
+		_ = s.ListenServeAndSignal(setup)
+	}()
+	if err = <-setup; err != nil {
+		log.Error().Err(err).Str("input", "redis").Msg("failed to initialize redis input")
+		cancel()
+	}
+	<-ctx.Done()
+	_ = s.Close()
 	return
 }
 

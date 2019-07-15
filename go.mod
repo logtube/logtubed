@@ -18,7 +18,7 @@ require (
 	github.com/rs/zerolog v1.14.3
 	go.guoyk.net/binfs v1.0.0
 	go.guoyk.net/byteflow v1.0.0
-	go.guoyk.net/diskqueue v1.0.0
+	go.guoyk.net/diskqueue v1.0.1
 	go.guoyk.net/redcon v1.0.0
 	go.guoyk.net/sptp v1.0.0
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect

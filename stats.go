@@ -2,36 +2,35 @@ package main
 
 import (
 	"container/ring"
+	"context"
 	"encoding/json"
 	"fmt"
-	"go.guoyk.net/diskqueue"
 	"io"
 	"net/http"
 	"sync/atomic"
 	"time"
 )
 
+type StatsDepthFunc func() int64
+
 type Stats struct {
-	queue diskqueue.DiskQueue
+	depthFunc StatsDepthFunc
 
 	dataIn    *ring.Ring // input events count for last 30min, in 10 seconds precision
 	dataOut   *ring.Ring // output events count for last 30min, in 10 seconds precision
 	dataDepth *ring.Ring // depth of diskqueue for last 30min, in 10 seconds precision
 }
 
-func NewStats(queue diskqueue.DiskQueue) (s *Stats) {
-	s = &Stats{}
-	s.queue = queue
-	s.dataIn = ring.New(30 * 6) // 30min in 10sec precision
-	s.dataIn = initStatsRing(s.dataIn)
-	s.dataOut = ring.New(30 * 6) // 30min in 10sec precision
-	s.dataOut = initStatsRing(s.dataOut)
-	s.dataDepth = ring.New(30 * 6) // 30min in 10sec precision
-	s.dataDepth = initStatsRing(s.dataDepth)
-	return
+func NewStats(depthFunc StatsDepthFunc) *Stats {
+	return &Stats{
+		depthFunc: depthFunc,
+		dataIn:    statsRingCreate(),
+		dataOut:   statsRingCreate(),
+		dataDepth: statsRingCreate(),
+	}
 }
 
-func formatStatsTime(t int) string {
+func statsTimeFormat(t int) string {
 	min := t < 0
 	if t < 0 {
 		t = -t
@@ -43,7 +42,8 @@ func formatStatsTime(t int) string {
 	return out
 }
 
-func initStatsRing(r *ring.Ring) *ring.Ring {
+func statsRingCreate() *ring.Ring {
+	r := ring.New(30 * 6)
 	n := r.Len()
 	for i := 0; i < n; i++ {
 		r.Value = new(uint64)
@@ -52,7 +52,7 @@ func initStatsRing(r *ring.Ring) *ring.Ring {
 	return r
 }
 
-func sumStatsRing(r *ring.Ring) (out []map[string]interface{}) {
+func statsRingSum(r *ring.Ring) (out []map[string]interface{}) {
 	n := r.Len()
 	if n < 1 {
 		return
@@ -61,7 +61,7 @@ func sumStatsRing(r *ring.Ring) (out []map[string]interface{}) {
 	for i := 1; i < n; i++ {
 		r = r.Prev()
 		out = append(out, map[string]interface{}{
-			"time":  formatStatsTime(-10 * i),
+			"time":  statsTimeFormat(-10 * i),
 			"value": atomic.LoadUint64(r.Value.(*uint64)),
 		})
 	}
@@ -72,15 +72,19 @@ func sumStatsRing(r *ring.Ring) (out []map[string]interface{}) {
 	return
 }
 
-func (s *Stats) Routine() {
+func (s *Stats) Run(ctx context.Context) {
+	// create ticker
 	t := time.Tick(10 * time.Second)
+LOOP:
 	for {
 		select {
 		case <-t:
 			// update dataDepth
-			atomic.StoreUint64(s.dataDepth.Value.(*uint64), uint64(s.queue.Depth()))
+			atomic.StoreUint64(s.dataDepth.Value.(*uint64), uint64(s.depthFunc()))
 			// rotate the ring
 			s.Rotate()
+		case <-ctx.Done():
+			break LOOP
 		}
 	}
 }
@@ -104,9 +108,9 @@ func (s *Stats) IncrQueueOut() {
 
 func (s *Stats) Handler(w http.ResponseWriter, r *http.Request) {
 	data := map[string]interface{}{
-		"queue_in":    sumStatsRing(s.dataIn),
-		"queue_out":   sumStatsRing(s.dataOut),
-		"queue_depth": sumStatsRing(s.dataDepth),
+		"queue_in":    statsRingSum(s.dataIn),
+		"queue_out":   statsRingSum(s.dataOut),
+		"queue_depth": statsRingSum(s.dataDepth),
 	}
 	var buf []byte
 	var err error

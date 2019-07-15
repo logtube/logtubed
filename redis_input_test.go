@@ -1,10 +1,10 @@
 package main
 
 import (
+	"context"
 	"github.com/go-redis/redis"
 	"reflect"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 )
@@ -20,21 +20,20 @@ func TestRedisInput_Run(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	defer input.Close()
 
-	queue := make(chan Event, 100)
+	data := make(chan Event, 100)
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	queue := &testQueue{data: data}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan interface{})
 
 	go func() {
-		defer wg.Done()
-
 		var err error
-
-		if err = input.Run(queue); err != nil {
+		if err = input.Run(ctx, cancel, queue); err != nil {
 			t.Fatal(err)
 		}
+		close(done)
 	}()
 
 	time.Sleep(time.Second)
@@ -67,7 +66,7 @@ func TestRedisInput_Run(t *testing.T) {
 	var e Event
 	var e1 Event
 
-	e = <-queue
+	e = <-queue.data
 
 	e1 = Event{
 		Timestamp: time.Date(2019, 1, 2, 1, 4, 5, int(666*time.Millisecond), time.UTC),
@@ -93,7 +92,7 @@ func TestRedisInput_Run(t *testing.T) {
 		t.Fatal("not equal \n", e, "\n", e1)
 	}
 
-	e = <-queue
+	e = <-queue.data
 
 	e1 = Event{
 		Timestamp: time.Date(2019, 1, 2, 1, 4, 5, int(666*time.Millisecond), time.UTC),
@@ -117,7 +116,7 @@ func TestRedisInput_Run(t *testing.T) {
 		t.Fatal("not equal \n", e, "\n", e1)
 	}
 
-	e = <-queue
+	e = <-queue.data
 
 	e1 = Event{
 		Timestamp: time.Date(2019, 1, 2, 3, 4, 5, int(666*time.Millisecond), time.UTC),
@@ -142,7 +141,7 @@ func TestRedisInput_Run(t *testing.T) {
 		t.Fatal("not equal \n", e, "\n", e1)
 	}
 
-	e = <-queue
+	e = <-queue.data
 
 	e1 = Event{
 		Timestamp: time.Date(2019, 1, 2, 1, 4, 5, int(666*time.Millisecond), time.UTC),
@@ -171,7 +170,7 @@ func TestRedisInput_Run(t *testing.T) {
 		t.Fatal("not equal \n", e, "\n", e1)
 	}
 
-	e = <-queue
+	e = <-queue.data
 
 	e1 = Event{
 		Timestamp: time.Date(2019, 1, 2, 1, 4, 5, int(666*time.Millisecond), time.UTC),
@@ -198,7 +197,6 @@ func TestRedisInput_Run(t *testing.T) {
 		t.Fatal("not equal \n", e, "\n", e1)
 	}
 
-	_ = input.Close()
-
-	wg.Wait()
+	cancel()
+	<-done
 }

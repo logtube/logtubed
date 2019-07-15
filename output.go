@@ -1,38 +1,29 @@
 package main
 
-import "io"
-
 // Output output interface, all outputs are operated single-thread
 type Output interface {
-	io.Closer
-
-	Put(op Operation) error
+	PutOperation(op Operation) error
+	Close() error
 }
 
-func MultiOutput(outputs ...Output) Output {
-	return &multiOutput{outputs: outputs}
-}
+type MultiOutput []Output
 
-type multiOutput struct {
-	outputs []Output
-}
-
-func (m *multiOutput) Close() (err error) {
-	var err1 error
-	for _, o := range m.outputs {
-		if err1 = o.Close(); err1 != nil {
-			err = err1
-		}
+func (m MultiOutput) Close() (err error) {
+	if len(m) == 1 {
+		return m[0].Close()
+	}
+	for _, o := range m {
+		err = combineError(err, o.Close())
 	}
 	return
 }
 
-func (m *multiOutput) Put(op Operation) (err error) {
-	var err1 error
-	for _, o := range m.outputs {
-		if err1 = o.Put(op); err1 != nil {
-			err = err1
-		}
+func (m MultiOutput) PutOperation(op Operation) (err error) {
+	if len(m) == 1 {
+		return m[0].PutOperation(op)
+	}
+	for _, o := range m {
+		err = combineError(err, o.PutOperation(op))
 	}
 	return
 }

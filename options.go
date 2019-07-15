@@ -20,6 +20,7 @@ type SPTPInputOptions struct {
 }
 
 type TopicsOptions struct {
+	Priors          []string `yaml:"priors"`
 	KeywordRequired []string `yaml:"keyword_required"`
 	Ignored         []string `yaml:"ignored"`
 }

@@ -1,13 +1,13 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"go.guoyk.net/sptp"
 	"net"
 	"reflect"
-	"sync"
 	"testing"
 )
 
@@ -20,21 +20,20 @@ func TestSPTPInput_Run(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	defer input.Close()
 
-	queue := make(chan Event, 100)
+	data := make(chan Event, 100)
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	queue := &testQueue{data: data}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan interface{})
 
 	go func() {
-		defer wg.Done()
-
 		var err error
-
-		if err = input.Run(queue); err != nil {
+		if err = input.Run(ctx, cancel, queue); err != nil {
 			t.Fatal(err)
 		}
+		close(done)
 	}()
 
 	var addr *net.UDPAddr
@@ -81,13 +80,12 @@ func TestSPTPInput_Run(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	e := <-queue
+	e := <-queue.data
 
 	if !reflect.DeepEqual(e, ce.ToEvent()) {
 		t.Fatal("failed")
 	}
 
-	_ = input.Close()
-
-	wg.Wait()
+	cancel()
+	<-done
 }

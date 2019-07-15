@@ -63,7 +63,7 @@ func (l *LocalOutput) Close() error {
 	return nil
 }
 
-func (l *LocalOutput) Put(op Operation) (err error) {
+func (l *LocalOutput) PutOperation(op Operation) (err error) {
 	var f *os.File
 	if f, err = l.takeFile(op.Index); err != nil {
 		return

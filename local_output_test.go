@@ -17,7 +17,7 @@ func TestLocalOutput_Put(t *testing.T) {
 	}
 	defer o.Close()
 
-	if err = o.Put(Event{
+	if err = o.PutOperation(Event{
 		Timestamp: time.Date(2019, 1, 2, 3, 4, 5, 6, time.Local),
 		Env:       "test",
 		Project:   "test",

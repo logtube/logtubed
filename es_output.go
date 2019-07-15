@@ -54,7 +54,7 @@ func (e *ESOutput) Close() (err error) {
 	return
 }
 
-func (e *ESOutput) Put(op Operation) (err error) {
+func (e *ESOutput) PutOperation(op Operation) (err error) {
 	if e.bulk == nil {
 		e.bulk = e.client.Bulk()
 	}

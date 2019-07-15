@@ -49,7 +49,7 @@ go.guoyk.net/binfs
 go.guoyk.net/binfs/binfsecho
 # go.guoyk.net/byteflow v1.0.0
 go.guoyk.net/byteflow
-# go.guoyk.net/diskqueue v1.0.0
+# go.guoyk.net/diskqueue v1.0.1
 go.guoyk.net/diskqueue
 # go.guoyk.net/redcon v1.0.0
 go.guoyk.net/redcon
