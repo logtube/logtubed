@@ -26,9 +26,9 @@ func combineError(err1 error, err2 error) error {
 
 func setupZerolog(verbose bool) {
 	if verbose {
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	} else {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: !verbose, TimeFormat: time.RFC3339})
 }

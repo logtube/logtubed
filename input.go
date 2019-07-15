@@ -19,10 +19,11 @@ func (m MultiInput) Run(ctx context.Context, ctxCancel context.CancelFunc, outpu
 		return m[0].Run(ctx, ctxCancel, output)
 	}
 	wg := &sync.WaitGroup{}
-	for _, i := range m {
+	for _, _input := range m {
+		input := _input
 		wg.Add(1)
 		go func() {
-			err = combineError(err, i.Run(ctx, ctxCancel, output))
+			err = combineError(err, input.Run(ctx, ctxCancel, output))
 			wg.Done()
 		}()
 	}
