@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/logtube/logtubed/output"
 	"testing"
 	"time"
 )
@@ -29,11 +30,11 @@ func (q *testQueue) Depth() int64 {
 	return int64(len(q.data))
 }
 
-func (q *testQueue) Run(ctx context.Context, output Output) error {
+func (q *testQueue) Run(ctx context.Context, ot output.Output) error {
 	for {
 		select {
 		case e := <-q.data:
-			output.PutOperation(e.ToOperation())
+			ot.PutOperation(e.ToOperation())
 		case <-ctx.Done():
 		}
 	}

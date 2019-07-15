@@ -1,4 +1,4 @@
-package main
+package output
 
 import (
 	"context"
@@ -7,6 +7,14 @@ import (
 	"github.com/rs/zerolog/log"
 	"time"
 )
+
+type ESOutputOptions struct {
+	Enabled    bool     `yaml:"enabled"`
+	URLs       []string `yaml:"urls"`
+	BatchSize  int      `yaml:"batch_size"`
+	BatchRate  int      `yaml:"batch_rate"`
+	BatchBurst int      `yaml:"batch_burst"`
+}
 
 type ESOutput struct {
 	Options ESOutputOptions
@@ -59,7 +67,7 @@ func (e *ESOutput) PutOperation(op Operation) (err error) {
 		e.bulk = e.client.Bulk()
 	}
 	// append bulk operation
-	br := elastic.NewBulkIndexRequest().Index(op.Index).Type("_doc").Doc(string(op.Body))
+	br := elastic.NewBulkIndexRequest().Index(op.GetIndex()).Type("_doc").Doc(string(op.GetBody()))
 	e.bulk.Add(br)
 	// submit bulk if needed
 	if e.checkTimeout() || e.bulk.NumberOfActions() > e.Options.BatchSize {

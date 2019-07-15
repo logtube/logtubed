@@ -1,10 +1,9 @@
-package main
+package output
 
 import (
 	"io/ioutil"
 	"os"
 	"testing"
-	"time"
 )
 
 func TestLocalOutput_Put(t *testing.T) {
@@ -17,13 +16,10 @@ func TestLocalOutput_Put(t *testing.T) {
 	}
 	defer o.Close()
 
-	if err = o.PutOperation(Event{
-		Timestamp: time.Date(2019, 1, 2, 3, 4, 5, 6, time.Local),
-		Env:       "test",
-		Project:   "test",
-		Topic:     "debug",
-		Message:   "hello, world",
-	}.ToOperation()); err != nil {
+	if err = o.PutOperation(&testOperation{
+		index: "debug-test-test-2019-01-02",
+		body:  []byte(`{"crid":"","env":"test","hostname":"","message":"hello, world","project":"test","timestamp":"2019-01-02T03:04:05.000000006+08:00","topic":"debug","via":""}`),
+	}); err != nil {
 		t.Fatal(err)
 	}
 

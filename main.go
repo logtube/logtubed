@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/logtube/logtubed/output"
 	"github.com/rs/zerolog/log"
 	"net/http"
 	_ "net/http/pprof"
@@ -39,7 +40,7 @@ func main() {
 
 		options Options
 
-		outputs MultiOutput
+		outputs output.MultiOutput
 		queue   Queue
 		inputs  MultiInput
 	)
@@ -78,30 +79,31 @@ func main() {
 
 	// create outputs
 	if options.OutputES.Enabled {
-		var output *ESOutput
-		if output, err = NewESOutput(options.OutputES); err != nil {
+		var o *output.ESOutput
+		if o, err = output.NewESOutput(options.OutputES); err != nil {
 			log.Error().Err(err).Msg("failed to create es output")
 			return
 		}
+		defer o.Close()
 		log.Info().Msg("es output created")
-		outputs = append(outputs, output)
+		outputs = append(outputs, o)
 	}
 
 	if options.OutputLocal.Enabled {
-		var output *LocalOutput
-		if output, err = NewLocalOutput(options.OutputLocal); err != nil {
+		var o *output.LocalOutput
+		if o, err = output.NewLocalOutput(options.OutputLocal); err != nil {
 			log.Error().Err(err).Msg("failed to create local output")
 			return
 		}
+		defer o.Close()
 		log.Info().Msg("local output created")
-		outputs = append(outputs, output)
+		outputs = append(outputs, o)
 	}
 
 	if len(outputs) == 0 {
 		err = errors.New("no output")
 		return
 	}
-	defer outputs.Close()
 
 	// create the queue
 	if queue, err = NewEventQueue(options.Queue, options.Topics); err != nil {

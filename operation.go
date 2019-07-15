@@ -25,6 +25,14 @@ type Operation struct {
 	Body  []byte `json:"body"`
 }
 
+func (o Operation) GetIndex() string {
+	return o.Index
+}
+
+func (o Operation) GetBody() []byte {
+	return o.Body
+}
+
 func (o Operation) DiskQueueMarshal() (ret []byte, err error) {
 	index := []byte(o.Index)
 	total := 2 + 2 + len(index) + 4 + len(o.Body)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/logtube/logtubed/output"
 	"io/ioutil"
 	"strings"
 
@@ -31,19 +32,6 @@ type QueueOptions struct {
 	SyncEvery int    `yaml:"sync_every"`
 }
 
-type ESOutputOptions struct {
-	Enabled    bool     `yaml:"enabled"`
-	URLs       []string `yaml:"urls"`
-	BatchSize  int      `yaml:"batch_size"`
-	BatchRate  int      `yaml:"batch_rate"`
-	BatchBurst int      `yaml:"batch_burst"`
-}
-
-type LocalOutputOptions struct {
-	Enabled bool   `yaml:"enabled"`
-	Dir     string `yaml:"dir"`
-}
-
 type PProfOptions struct {
 	Bind  string `yaml:"bind"`
 	Block int    `yaml:"block"`
@@ -52,14 +40,14 @@ type PProfOptions struct {
 
 // Options options for logtubed
 type Options struct {
-	Verbose     bool               `yaml:"verbose"`
-	PProf       PProfOptions       `yaml:"pprof"`
-	InputRedis  RedisInputOptions  `yaml:"input_redis"`
-	InputSPTP   SPTPInputOptions   `yaml:"input_sptp"`
-	Topics      TopicsOptions      `yaml:"topics"`
-	Queue       QueueOptions       `yaml:"queue"`
-	OutputES    ESOutputOptions    `yaml:"output_es"`
-	OutputLocal LocalOutputOptions `yaml:"output_local"`
+	Verbose     bool                      `yaml:"verbose"`
+	PProf       PProfOptions              `yaml:"pprof"`
+	InputRedis  RedisInputOptions         `yaml:"input_redis"`
+	InputSPTP   SPTPInputOptions          `yaml:"input_sptp"`
+	Topics      TopicsOptions             `yaml:"topics"`
+	Queue       QueueOptions              `yaml:"queue"`
+	OutputES    output.ESOutputOptions    `yaml:"output_es"`
+	OutputLocal output.LocalOutputOptions `yaml:"output_local"`
 }
 
 func loadOptionsFile(filename string) (opt Options, err error) {

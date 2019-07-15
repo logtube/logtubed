@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"github.com/logtube/logtubed/output"
 	"github.com/rs/zerolog/log"
 	"go.guoyk.net/diskqueue"
 	"os"
@@ -21,7 +22,7 @@ type Queue interface {
 	Stats() *Stats
 	PutEvent(e Event) error
 	Depth() int64
-	Run(ctx context.Context, output Output) error
+	Run(ctx context.Context, o output.Output) error
 }
 
 type queue struct {
@@ -119,7 +120,7 @@ func (q *queue) PutEvent(e Event) (err error) {
 	return
 }
 
-func (q *queue) Run(ctx context.Context, output Output) (err error) {
+func (q *queue) Run(ctx context.Context, ot output.Output) (err error) {
 	// run stats
 	go q.stats.Run(ctx)
 
@@ -170,7 +171,7 @@ LOOP:
 
 		// output
 		if len(o.Index) > 0 && len(o.Body) > 0 {
-			if err = output.PutOperation(o); err != nil {
+			if err = ot.PutOperation(o); err != nil {
 				log.Error().Err(err).Msg("failed to output Operation")
 			}
 		}

@@ -1,4 +1,4 @@
-package main
+package output
 
 import (
 	"encoding/json"
@@ -8,6 +8,11 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+type LocalOutputOptions struct {
+	Enabled bool   `yaml:"enabled"`
+	Dir     string `yaml:"dir"`
+}
 
 type LocalOutput struct {
 	Options LocalOutputOptions
@@ -65,11 +70,11 @@ func (l *LocalOutput) Close() error {
 
 func (l *LocalOutput) PutOperation(op Operation) (err error) {
 	var f *os.File
-	if f, err = l.takeFile(op.Index); err != nil {
+	if f, err = l.takeFile(op.GetIndex()); err != nil {
 		return
 	}
 	var ret string
-	if ret, err = restoreOperation(op.Body); err != nil {
+	if ret, err = restoreOperation(op.GetBody()); err != nil {
 		return
 	}
 	_, err = f.WriteString(ret)

@@ -15,6 +15,7 @@ require (
 	github.com/olivere/elastic v6.2.18+incompatible
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/rs/zerolog v1.14.3
 	go.guoyk.net/binfs v1.0.0
 	go.guoyk.net/byteflow v1.0.0
