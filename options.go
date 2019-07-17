@@ -1,53 +1,52 @@
 package main
 
 import (
-	"github.com/logtube/logtubed/output"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/go-yaml/yaml"
 )
 
-type RedisInputOptions struct {
-	Enabled    bool   `yaml:"enabled"`     // whether redis input is enabled
-	Bind       string `yaml:"bind"`        // bind address
-	Multi      bool   `yaml:"multi"`       // report as redis 2.4+, support multiple RPUSH/LPUSH
-	TimeOffset int    `yaml:"time_offset"` // for legacy message, default time offset, set -8 for Asia/Shanghai
-}
-
-type SPTPInputOptions struct {
-	Enabled bool   `yaml:"enabled"` // whether SPTP input is enabled
-	Bind    string `yaml:"bind"`    // bind address
-}
-
-type TopicsOptions struct {
-	Priors          []string `yaml:"priors"`
-	KeywordRequired []string `yaml:"keyword_required"`
-	Ignored         []string `yaml:"ignored"`
-}
-
-type QueueOptions struct {
-	Dir       string `yaml:"dir"`
-	Name      string `yaml:"name"`
-	SyncEvery int    `yaml:"sync_every"`
-}
-
-type PProfOptions struct {
-	Bind  string `yaml:"bind"`
-	Block int    `yaml:"block"`
-	Mutex int    `yaml:"mutex"`
-}
-
 // Options options for logtubed
 type Options struct {
-	Verbose     bool                      `yaml:"verbose"`
-	PProf       PProfOptions              `yaml:"pprof"`
-	InputRedis  RedisInputOptions         `yaml:"input_redis"`
-	InputSPTP   SPTPInputOptions          `yaml:"input_sptp"`
-	Topics      TopicsOptions             `yaml:"topics"`
-	Queue       QueueOptions              `yaml:"queue"`
-	OutputES    output.ESOutputOptions    `yaml:"output_es"`
-	OutputLocal output.LocalOutputOptions `yaml:"output_local"`
+	Verbose  bool   `yaml:"verbose"`
+	Hostname string `yaml:"hostname"`
+	PProf    struct {
+		Bind  string `yaml:"bind"`
+		Block int    `yaml:"block"`
+		Mutex int    `yaml:"mutex"`
+	} `yaml:"pprof"`
+	InputRedis struct {
+		Enabled    bool   `yaml:"enabled"`
+		Bind       string `yaml:"bind"`
+		Multi      bool   `yaml:"multi"`
+		TimeOffset int    `yaml:"time_offset"`
+	} `yaml:"input_redis"`
+	InputSPTP struct {
+		Enabled bool   `yaml:"enabled"`
+		Bind    string `yaml:"bind"`
+	} `yaml:"input_sptp"`
+	Topics struct {
+		KeywordRequired []string `yaml:"keyword_required"`
+		Ignored         []string `yaml:"ignored"`
+		Priors          []string `yaml:"priors"`
+	} `yaml:"topics"`
+	Queue struct {
+		Dir       string `yaml:"dir"`
+		Name      string `yaml:"name"`
+		SyncEvery int    `yaml:"sync_every"`
+	} `yaml:"queue"`
+	OutputES struct {
+		Enabled      bool     `yaml:"enabled"`
+		URLs         []string `yaml:"urls"`
+		BatchSize    int      `yaml:"batch_size"`
+		BatchTimeout int      `yaml:"batch_timeout"`
+	} `yaml:"output_es"`
+	OutputLocal struct {
+		Enabled bool   `yaml:"enabled"`
+		Dir     string `yaml:"dir"`
+	} `yaml:"output_local"`
 }
 
 func loadOptionsFile(filename string) (opt Options, err error) {
@@ -67,6 +66,12 @@ func LoadOptions(filename string) (opt Options, err error) {
 	if opt, err = loadOptionsFile(filename); err != nil {
 		return
 	}
+	if len(opt.Hostname) == 0 {
+		opt.Hostname, _ = os.Hostname()
+	}
+	if len(opt.Hostname) == 0 {
+		opt.Hostname = "localhost"
+	}
 	defaultStr(&opt.InputRedis.Bind, "0.0.0.0:6379")
 	defaultStr(&opt.InputSPTP.Bind, "0.0.0.0:9921")
 	defaultStr(&opt.Queue.Dir, "/var/lib/logtubed")
@@ -74,8 +79,7 @@ func LoadOptions(filename string) (opt Options, err error) {
 	defaultInt(&opt.Queue.SyncEvery, 100)
 	defaultStrSlice(&opt.OutputES.URLs, []string{"http://127.0.0.1:9200"})
 	defaultInt(&opt.OutputES.BatchSize, 100)
-	defaultInt(&opt.OutputES.BatchRate, 1000)
-	defaultInt(&opt.OutputES.BatchBurst, 10000)
+	defaultInt(&opt.OutputES.BatchTimeout, 3)
 	defaultStr(&opt.OutputLocal.Dir, "/var/log")
 	defaultStr(&opt.PProf.Bind, "0.0.0.0:6060")
 	return

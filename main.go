@@ -2,10 +2,15 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/logtube/logtubed/output"
+	"github.com/logtube/logtubed/internal"
+	"github.com/logtube/logtubed/internal/runner"
+	"github.com/logtube/logtubed/internal/systemd"
+	"github.com/logtube/logtubed/types"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"net/http"
 	_ "net/http/pprof"
@@ -13,6 +18,7 @@ import (
 	"os/signal"
 	"runtime"
 	"syscall"
+	"time"
 )
 
 var (
@@ -30,6 +36,35 @@ func init() {
 	runtime.GOMAXPROCS(runtime.NumCPU() * 5)
 }
 
+func setupZerolog(verbose bool) {
+	if verbose {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	}
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: !verbose, TimeFormat: time.RFC3339})
+}
+
+func handleStats(qs ...internal.Queue) http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		var val int64
+		for _, q := range qs {
+			val += q.Depth()
+		}
+		out := map[string]interface{}{
+			"queue_depth": []interface{}{
+				map[string]interface{}{
+					"time":  time.Now(),
+					"value": val,
+				},
+			},
+		}
+		buf, _ := json.Marshal(out)
+		rw.Header().Set("Content-Type", "application/json")
+		_, _ = rw.Write(buf)
+	}
+}
+
 func main() {
 	var (
 		err error
@@ -38,11 +73,18 @@ func main() {
 		optVerbose bool
 		optCfgFile string
 
-		options Options
+		opts Options
 
-		outputs output.MultiOutput
-		queue   Queue
-		inputs  MultiInput
+		outputElastic internal.ElasticOutput
+
+		queueStd    internal.Queue
+		queuePri    internal.Queue
+		outputLocal internal.LocalOutput
+
+		dispatcher types.EventConsumer
+
+		inputRedis internal.RedisInput
+		inputSPTP  internal.SPTPInput
 	)
 
 	defer exit(&err)
@@ -63,129 +105,149 @@ func main() {
 
 	// load options
 	log.Info().Str("file", optCfgFile).Msg("load options file")
-	if options, err = LoadOptions(optCfgFile); err != nil {
+	if opts, err = LoadOptions(optCfgFile); err != nil {
 		log.Error().Err(err).Msg("failed to load options file")
 		return
 	}
 
 	// adjust options.Verbose and re-init zerolog if needed
-	if options.Verbose = options.Verbose || optVerbose; options.Verbose {
+	if opts.Verbose = opts.Verbose || optVerbose; opts.Verbose {
 		setupZerolog(true)
 	}
 
 	// configure mutex and block rate
-	runtime.SetMutexProfileFraction(options.PProf.Mutex)
-	runtime.SetBlockProfileRate(options.PProf.Block)
+	runtime.SetMutexProfileFraction(opts.PProf.Mutex)
+	runtime.SetBlockProfileRate(opts.PProf.Block)
 
-	// create outputs
-	if options.OutputES.Enabled {
-		var o *output.ESOutput
-		if o, err = output.NewESOutput(options.OutputES); err != nil {
-			log.Error().Err(err).Msg("failed to create es output")
+	// initialize elastic output, and associated queues
+	if opts.OutputES.Enabled {
+		if outputElastic, err = internal.NewElasticOutput(internal.ElasticOutputOptions{
+			URLs:         opts.OutputES.URLs,
+			BatchSize:    opts.OutputES.BatchSize,
+			BatchTimeout: time.Duration(opts.OutputES.BatchTimeout) * time.Second,
+		}); err != nil {
 			return
 		}
-		defer o.Close()
-		log.Info().Msg("es output created")
-		outputs = append(outputs, o)
-	}
 
-	if options.OutputLocal.Enabled {
-		var o *output.LocalOutput
-		if o, err = output.NewLocalOutput(options.OutputLocal); err != nil {
-			log.Error().Err(err).Msg("failed to create local output")
+		if queueStd, err = internal.NewQueue(internal.QueueOptions{
+			Dir:       opts.Queue.Dir,
+			Name:      opts.Queue.Name,
+			SyncEvery: opts.Queue.SyncEvery,
+			Next:      outputElastic,
+		}); err != nil {
 			return
 		}
-		defer o.Close()
-		log.Info().Msg("local output created")
-		outputs = append(outputs, o)
+
+		if len(opts.Topics.Priors) > 0 {
+			if queuePri, err = internal.NewQueue(internal.QueueOptions{
+				Dir:       opts.Queue.Dir,
+				Name:      opts.Queue.Name + "-pri",
+				SyncEvery: opts.Queue.SyncEvery,
+				Next:      outputElastic,
+			}); err != nil {
+				return
+			}
+		}
 	}
 
-	if len(outputs) == 0 {
-		err = errors.New("no output")
+	// initialize local output
+	if opts.OutputLocal.Enabled {
+		if outputLocal, err = internal.NewLocalOutput(internal.LocalOutputOptions{
+			Dir: opts.OutputLocal.Dir,
+		}); err != nil {
+			return
+		}
+	}
+
+	// initialize dispatcher
+	dOpts := internal.DispatcherOptions{
+		Ignores:  opts.Topics.Ignored,
+		Keywords: opts.Topics.KeywordRequired,
+		Priors:   opts.Topics.Priors,
+		Hostname: opts.Hostname,
+		Next:     outputLocal,
+		NextStd:  queueStd,
+		NextPri:  queuePri,
+	}
+
+	if dispatcher, err = internal.NewDispatcher(dOpts); err != nil {
 		return
 	}
 
-	// create the queue
-	if queue, err = NewEventQueue(options.Queue, options.Topics); err != nil {
-		log.Error().Err(err).Msg("failed to create queue")
-		return
-	}
-	log.Info().Str("name", options.Queue.Name).Str("dir", options.Queue.Dir).Msg("queue created")
-
-	// register http handle func
-	http.HandleFunc("/stats", queue.Stats().Handler)
-
-	// create input
-	if options.InputRedis.Enabled {
-		var input *RedisInput
-		if input, err = NewRedisInput(options.InputRedis); err != nil {
-			log.Error().Err(err).Msg("failed to create redis input")
+	// initialize Redis input
+	if opts.InputRedis.Enabled {
+		if inputRedis, err = internal.NewRedisInput(internal.RedisInputOptions{
+			Bind:       opts.InputRedis.Bind,
+			Multi:      opts.InputRedis.Multi,
+			TimeOffset: opts.InputRedis.TimeOffset,
+			Next:       dispatcher,
+		}); err != nil {
 			return
 		}
-		log.Info().Msg("redis input created")
-		inputs = append(inputs, input)
 	}
 
-	if options.InputSPTP.Enabled {
-		var input *SPTPInput
-		if input, err = NewSPTPInput(options.InputSPTP); err != nil {
-			log.Error().Err(err).Msg("failed to create SPTP input")
+	// initialize SPTP input
+	if opts.InputSPTP.Enabled {
+		if inputSPTP, err = internal.NewSPTPInput(internal.SPTPInputOptions{
+			Bind: opts.InputSPTP.Bind,
+			Next: dispatcher,
+		}); err != nil {
 			return
 		}
-		log.Info().Msg("SPTP input created")
-		inputs = append(inputs, input)
 	}
 
-	if len(inputs) == 0 {
-		log.Info().Msg("no inputs, running in drain mode")
-		inputs = append(inputs, DummyInput{})
-	}
+	// contexts
+	ctxL3, cancelL3 := context.WithCancel(context.Background())
+	doneL3 := make(chan interface{})
 
-	// queue ignition
-	queueCtx, queueCancel := context.WithCancel(context.Background())
-	queueDone := make(chan interface{})
+	ctxL2, cancelL2 := context.WithCancel(ctxL3)
+	doneL2 := make(chan interface{})
 
-	go func() {
-		err = queue.Run(queueCtx, outputs)
-		close(queueDone)
-	}()
+	ctxL1, cancelL1 := context.WithCancel(ctxL2)
+	doneL1 := make(chan interface{})
 
-	// inputs ignition
-	inputsCtx, inputsCancel := context.WithCancel(context.Background())
-	inputsDone := make(chan interface{})
+	// ignite L3
+	rgL3 := runner.NewGroup(outputElastic)
+	go rgL3.Run(ctxL3, cancelL3, doneL3)
+	time.Sleep(time.Millisecond * 100)
 
-	go func() {
-		err = inputs.Run(inputsCtx, inputsCancel, queue)
-		close(inputsDone)
-	}()
+	// ignite L2
+	rgL2 := runner.NewGroup(queuePri, queueStd, outputLocal)
+	go rgL2.Run(ctxL2, cancelL2, doneL2)
+	time.Sleep(time.Millisecond * 100)
 
-	// pprof and stats ignition
-	go http.ListenAndServe(options.PProf.Bind, nil)
+	// ignite L1
+	rgL1 := runner.NewGroup(inputSPTP, inputRedis)
+	go rgL1.Run(ctxL1, cancelL1, doneL1)
+	time.Sleep(time.Millisecond * 100)
 
-	// notify systemd for ready
-	_, _ = SdNotify(false, SdNotifyReady)
+	// ignite pprof / stats
+	http.HandleFunc("/stats", handleStats(queueStd, queuePri))
+	go http.ListenAndServe(opts.PProf.Bind, nil)
 
-	// wait for signal
-	sigch := make(chan os.Signal, 3)
-	signal.Notify(sigch, syscall.SIGINT, syscall.SIGTERM)
+	// notify systemd
+	_, _ = systemd.SdNotify(false, systemd.SdNotifyReady)
+
+	// signal ch
+	chsig := make(chan os.Signal, 3)
+	signal.Notify(chsig, syscall.SIGINT, syscall.SIGTERM)
 	select {
-	case <-inputsDone:
+	case <-doneL1:
 		err = errors.New("inputs quited unexpected")
-		log.Error().Err(err).Msg("inputs exited unexpected")
-	case sig := <-sigch:
+		log.Error().Err(err).Msg("error occurred")
+	case sig := <-chsig:
 		log.Info().Str("signal", sig.String()).Msg("signal caught")
 	}
 
-	// notify systemd for stopping
-	_, _ = SdNotify(false, SdNotifyStopping)
+	// cancel L1
+	cancelL1()
+	<-doneL1
 
-	// close inputs
-	inputsCancel()
-	<-inputsDone
-	log.Info().Msg("inputs closed")
+	// cancel L2
+	cancelL2()
+	<-doneL2
 
-	// close queue
-	queueCancel()
-	<-queueDone
-	log.Info().Msg("queue closed")
+	// cancel L3
+	cancelL3()
+	<-doneL3
 }
