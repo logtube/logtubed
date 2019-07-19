@@ -2,9 +2,9 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"github.com/logtube/logtubed/internal/runner"
 	"github.com/logtube/logtubed/types"
-	"errors"
 	"github.com/rs/zerolog/log"
 	"go.guoyk.net/diskqueue"
 	"os"
@@ -37,17 +37,18 @@ type queue struct {
 
 func NewQueue(opts QueueOptions) (Queue, error) {
 	if len(opts.Dir) == 0 {
-		return nil, errors.New("Queue: Dir is not set")
+		return nil, errors.New("queue: Dir is not set")
 	}
 	if len(opts.Name) == 0 {
-		return nil, errors.New("Queue: Name is not set")
+		return nil, errors.New("queue: Name is not set")
 	}
 	if opts.Next == nil {
-		return nil, errors.New("Queue: Next is not set")
+		return nil, errors.New("queue: Next is not set")
 	}
 	if opts.SyncEvery <= 0 {
 		opts.SyncEvery = 100
 	}
+	log.Info().Interface("opts", opts).Msg("queue created")
 	if err := os.MkdirAll(opts.Dir, 0755); err != nil {
 		return nil, err
 	}

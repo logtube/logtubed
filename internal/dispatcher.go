@@ -1,9 +1,10 @@
 package internal
 
 import (
+	"errors"
 	"github.com/logtube/logtubed/internal/errutil"
 	"github.com/logtube/logtubed/types"
-	"errors"
+	"github.com/rs/zerolog/log"
 )
 
 type DispatcherOptions struct {
@@ -37,6 +38,8 @@ func NewDispatcher(opts DispatcherOptions) (types.EventConsumer, error) {
 	if opts.NextStd == nil && opts.NextPri == nil && opts.Next == nil {
 		return nil, errors.New("non of NextStd, NextPri, Next is specified")
 	}
+
+	log.Info().Interface("opts", opts).Msg("dispatcher created")
 	d := &dispatcher{
 		Hostname: opts.Hostname,
 		tIgn:     make(map[string]bool),

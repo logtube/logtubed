@@ -2,11 +2,11 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/logtube/logtubed/internal/errutil"
 	"github.com/logtube/logtubed/internal/runner"
 	"github.com/logtube/logtubed/types"
-	"errors"
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
@@ -39,6 +39,7 @@ func NewLocalOutput(opts LocalOutputOptions) (LocalOutput, error) {
 	if err := os.MkdirAll(opts.Dir, 0755); err != nil {
 		return nil, err
 	}
+	log.Info().Str("output", "local").Interface("opts", opts).Msg("output created")
 	lo := &localOutput{
 		optDir: opts.Dir,
 		fs:     make(map[string]*os.File),

@@ -75,7 +75,8 @@ func main() {
 
 		opts Options
 
-		outputElastic internal.ElasticOutput
+		outputEsStd internal.ElasticOutput
+		outputEsPri internal.ElasticOutput
 
 		queueStd    internal.Queue
 		queuePri    internal.Queue
@@ -121,7 +122,7 @@ func main() {
 
 	// initialize elastic output, and associated queues
 	if opts.OutputES.Enabled {
-		if outputElastic, err = internal.NewElasticOutput(internal.ElasticOutputOptions{
+		if outputEsStd, err = internal.NewElasticOutput(internal.ElasticOutputOptions{
 			URLs:         opts.OutputES.URLs,
 			BatchSize:    opts.OutputES.BatchSize,
 			BatchTimeout: time.Duration(opts.OutputES.BatchTimeout) * time.Second,
@@ -133,17 +134,25 @@ func main() {
 			Dir:       opts.Queue.Dir,
 			Name:      opts.Queue.Name,
 			SyncEvery: opts.Queue.SyncEvery,
-			Next:      outputElastic,
+			Next:      outputEsStd,
 		}); err != nil {
 			return
 		}
 
 		if len(opts.Topics.Priors) > 0 {
+			if outputEsPri, err = internal.NewElasticOutput(internal.ElasticOutputOptions{
+				URLs:         opts.OutputES.URLs,
+				BatchSize:    opts.OutputES.BatchSize,
+				BatchTimeout: time.Duration(opts.OutputES.BatchTimeout) * time.Second,
+			}); err != nil {
+				return
+			}
+
 			if queuePri, err = internal.NewQueue(internal.QueueOptions{
 				Dir:       opts.Queue.Dir,
 				Name:      opts.Queue.Name + "-pri",
 				SyncEvery: opts.Queue.SyncEvery,
-				Next:      outputElastic,
+				Next:      outputEsPri,
 			}); err != nil {
 				return
 			}
@@ -207,7 +216,7 @@ func main() {
 	doneL1 := make(chan interface{})
 
 	// ignite L3
-	rgL3 := runner.NewGroup(outputElastic)
+	rgL3 := runner.NewGroup(outputEsStd, outputEsPri)
 	go rgL3.Run(ctxL3, cancelL3, doneL3)
 	time.Sleep(time.Millisecond * 100)
 

@@ -2,9 +2,9 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"github.com/logtube/logtubed/internal/runner"
 	"github.com/logtube/logtubed/types"
-	"errors"
 	"github.com/rs/zerolog/log"
 	"go.guoyk.net/sptp"
 	"net"
@@ -36,6 +36,7 @@ func NewSPTPInput(opts SPTPInputOptions) (SPTPInput, error) {
 	if addr, err = net.ResolveUDPAddr("udp", opts.Bind); err != nil {
 		return nil, err
 	}
+	log.Info().Str("input", "sptp").Interface("opts", opts).Msg("input created")
 	input := &sptpInput{
 		addr: addr,
 		next: opts.Next,

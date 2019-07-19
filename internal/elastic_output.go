@@ -46,6 +46,7 @@ func NewElasticOutput(opts ElasticOutputOptions) (ElasticOutput, error) {
 	if c, err = elastic.NewClient(elastic.SetURL(opts.URLs...)); err != nil {
 		return nil, err
 	}
+	log.Info().Str("output", "elastic").Interface("opts", opts).Msg("output created")
 	eo := &elasticOutput{
 		optBatchSize:    opts.BatchSize,
 		optBatchTimeout: opts.BatchTimeout,

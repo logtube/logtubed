@@ -3,9 +3,9 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/logtube/logtubed/internal/runner"
 	"github.com/logtube/logtubed/types"
-	"errors"
 	"github.com/rs/zerolog/log"
 	"go.guoyk.net/redcon"
 	"strings"
@@ -43,6 +43,7 @@ func NewRedisInput(opts RedisInputOptions) (RedisInput, error) {
 	if opts.Next == nil {
 		return nil, errors.New("RedisInput: Next is not set")
 	}
+	log.Info().Str("input", "redis").Interface("opts", opts).Msg("input created")
 	o := &redisInput{
 		optBind:       opts.Bind,
 		optMulti:      opts.Multi,
