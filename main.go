@@ -124,6 +124,7 @@ func main() {
 	if opts.OutputES.Enabled {
 		if outputEsStd, err = internal.NewElasticOutput(internal.ElasticOutputOptions{
 			URLs:         opts.OutputES.URLs,
+			Concurrency:  opts.OutputES.Concurrency,
 			BatchSize:    opts.OutputES.BatchSize,
 			BatchTimeout: time.Duration(opts.OutputES.BatchTimeout) * time.Second,
 		}); err != nil {
@@ -142,6 +143,7 @@ func main() {
 		if len(opts.Topics.Priors) > 0 {
 			if outputEsPri, err = internal.NewElasticOutput(internal.ElasticOutputOptions{
 				URLs:         opts.OutputES.URLs,
+				Concurrency:  opts.OutputES.Concurrency,
 				BatchSize:    opts.OutputES.BatchSize,
 				BatchTimeout: time.Duration(opts.OutputES.BatchTimeout) * time.Second,
 			}); err != nil {

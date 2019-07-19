@@ -40,6 +40,7 @@ type Options struct {
 	OutputES struct {
 		Enabled      bool     `yaml:"enabled"`
 		URLs         []string `yaml:"urls"`
+		Concurrency  int      `yaml:"concurrency"`
 		BatchSize    int      `yaml:"batch_size"`
 		BatchTimeout int      `yaml:"batch_timeout"`
 	} `yaml:"output_es"`
