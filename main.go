@@ -227,6 +227,10 @@ func main() {
 
 	// ignite L1
 	rgL1 := runner.NewGroup(inputSPTP, inputRedis)
+	if inputSPTP == nil && inputRedis == nil {
+		log.Info().Msg("no inputs, running in drain mode")
+		rgL1.Add(runner.DummyRunnable())
+	}
 	go rgL1.Run(ctxL1, cancelL1, doneL1)
 	time.Sleep(time.Millisecond * 100)
 
