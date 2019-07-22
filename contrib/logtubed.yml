@@ -29,8 +29,7 @@ output_es:
   urls:
     - http://127.0.0.1:9200
   batch_size: 100
-  batch_rate: 1000
-  batch_burst: 10000
+  concurrency: 3
 
 output_local:
   enabled: false
