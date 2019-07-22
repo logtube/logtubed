@@ -18,6 +18,8 @@ topics:
     - info
   ignored:
     - debug
+  priors:
+    - error
 
 queue:
   dir: /var/lib/logtube
