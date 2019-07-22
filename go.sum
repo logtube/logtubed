@@ -8,8 +8,6 @@ github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/go-redis/redis v6.15.2+incompatible h1:9SpNVG76gr6InJGxoZ6IuuxaCOQwDAhzyXg+Bs+0Sb4=
 github.com/go-redis/redis v6.15.2+incompatible/go.mod h1:NAIEuMOZ/fxfXJIrKDQDz8wamY7mA7PouImQ2Jvg6kA=
-github.com/go-yaml/yaml v2.1.0+incompatible h1:RYi2hDdss1u4YE7GwixGzWwVo47T8UQwnTLB6vQiq+o=
-github.com/go-yaml/yaml v2.1.0+incompatible/go.mod h1:w2MrLa16VYP0jy6N7M5kHaCkaLENm+P+Tv+MfurjSw0=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.3.1 h1:YF8+flBXS5eO826T4nzqPrxfhQThhXl0YzfuUPu4SBg=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
@@ -44,6 +42,8 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/zenazn/goji v0.9.0/go.mod h1:7S9M489iMyHBNxwZnk9/EHS098H4/F6TATF2mIxtB1Q=
 go.guoyk.net/byteflow v1.0.0 h1:aA0fRIah2j1W+R+7FW5ChLeHvUY1/q+60+ESHoR3Qmo=
 go.guoyk.net/byteflow v1.0.0/go.mod h1:Ns5x75CmTCPgPg9QjSm8puFHaHowdtKta0n+OUhkHD4=
+go.guoyk.net/common v1.0.0 h1:9X/nsGqFSAEO5rwF3uQDOQAya5mAk77QE4gtzqM18iI=
+go.guoyk.net/common v1.0.0/go.mod h1:e0sA6IBlmyp8h/6ng3ecyUX+js+w3l6Yn8LBJgJNRR0=
 go.guoyk.net/diskqueue v1.0.1 h1:2BoPqBi/ATn5bg2tJNlf25y9APnX6YFxAZV7uYVDOzg=
 go.guoyk.net/diskqueue v1.0.1/go.mod h1:UNc6nZbJsyE7UJF3meZ9iZ373vl5eE2aohhFcLsBjdQ=
 go.guoyk.net/redcon v1.0.0 h1:idGeqgrlsjv1mLKcW3BdAFpnxUxnp9KJlZQgWVIiorc=

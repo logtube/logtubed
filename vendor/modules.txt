@@ -8,8 +8,6 @@ github.com/go-redis/redis/internal/hashtag
 github.com/go-redis/redis/internal/pool
 github.com/go-redis/redis/internal/proto
 github.com/go-redis/redis/internal/util
-# github.com/go-yaml/yaml v2.1.0+incompatible
-github.com/go-yaml/yaml
 # github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983
 github.com/mailru/easyjson
 github.com/mailru/easyjson/jlexer
@@ -32,9 +30,13 @@ github.com/rs/zerolog/internal/json
 github.com/stretchr/testify/assert
 # go.guoyk.net/byteflow v1.0.0
 go.guoyk.net/byteflow
+# go.guoyk.net/common v1.0.0
+go.guoyk.net/common
 # go.guoyk.net/diskqueue v1.0.1
 go.guoyk.net/diskqueue
 # go.guoyk.net/redcon v1.0.0
 go.guoyk.net/redcon
 # go.guoyk.net/sptp v1.0.0
 go.guoyk.net/sptp
+# gopkg.in/yaml.v2 v2.2.2
+gopkg.in/yaml.v2

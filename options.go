@@ -1,70 +1,55 @@
 package main
 
 import (
-	"io/ioutil"
+	"go.guoyk.net/common"
 	"os"
-	"strings"
-
-	"github.com/go-yaml/yaml"
 )
 
 // Options options for logtubed
 type Options struct {
-	Verbose  bool   `yaml:"verbose"`
+	Verbose  bool   `yaml:"verbose" default:"$LOGTUBED_VERBOSE|false"`
 	Hostname string `yaml:"hostname"`
 	PProf    struct {
-		Bind  string `yaml:"bind"`
-		Block int    `yaml:"block"`
-		Mutex int    `yaml:"mutex"`
+		Bind  string `yaml:"bind" default:"$LOGTUBED_PPROF_BIND|0.0.0.0:6060"`
+		Block int    `yaml:"block" default:"$LOGTUBED_PPROF_BLOCK|0"`
+		Mutex int    `yaml:"mutex" default:"$LOGTUBED_PPROF_MUTEX|0"`
 	} `yaml:"pprof"`
 	InputRedis struct {
-		Enabled    bool   `yaml:"enabled"`
-		Bind       string `yaml:"bind"`
-		Multi      bool   `yaml:"multi"`
-		TimeOffset int    `yaml:"time_offset"`
+		Enabled    bool   `yaml:"enabled" default:"$LOGTUBED_REDIS_ENABLED|false"`
+		Bind       string `yaml:"bind" default:"$LOGTUBED_REDIS_BIND|0.0.0.0:6379"`
+		Multi      bool   `yaml:"multi" default:"$LOGTUBED_REDIS_MULTI|false"`
+		TimeOffset int    `yaml:"time_offset" default:"$LOGTUBED_REDIS_TIME_OFFSET|0"`
 	} `yaml:"input_redis"`
 	InputSPTP struct {
-		Enabled bool   `yaml:"enabled"`
-		Bind    string `yaml:"bind"`
+		Enabled bool   `yaml:"enabled" default:"$LOGTUBED_SPTP_ENABLED|false"`
+		Bind    string `yaml:"bind" default:"$LOGTUBED_SPTP_BIND|0.0.0.0:9921"`
 	} `yaml:"input_sptp"`
 	Topics struct {
-		KeywordRequired []string `yaml:"keyword_required"`
-		Ignored         []string `yaml:"ignored"`
-		Priors          []string `yaml:"priors"`
+		KeywordRequired []string `yaml:"keyword_required" default:"$LOGTUBED_TOPICS_KEYWORD_REQUIRED|[]"`
+		Ignored         []string `yaml:"ignored" default:"$LOGTUBED_TOPICS_IGNORED|[]"`
+		Priors          []string `yaml:"priors" default:"$LOGTUBED_TOPICS_PRIORS|[]"`
 	} `yaml:"topics"`
 	Queue struct {
-		Dir       string `yaml:"dir"`
-		Name      string `yaml:"name"`
-		SyncEvery int    `yaml:"sync_every"`
+		Dir       string `yaml:"dir" default:"$LOGTUBED_QUEUE_DIR|/var/lib/logtubed"`
+		Name      string `yaml:"name" default:"$LOGTUBED_QUEUE_NAME|logtubed"`
+		SyncEvery int    `yaml:"sync_every" default:"$LOGTUBED_QUEUE_SYNC_EVERY|100"`
 	} `yaml:"queue"`
 	OutputES struct {
-		Enabled      bool     `yaml:"enabled"`
-		URLs         []string `yaml:"urls"`
-		Concurrency  int      `yaml:"concurrency"`
-		BatchSize    int      `yaml:"batch_size"`
-		BatchTimeout int      `yaml:"batch_timeout"`
+		Enabled      bool     `yaml:"enabled" default:"$LOGTUBED_ES_ENABLED|false"`
+		URLs         []string `yaml:"urls" default:"$LOGTUBED_ES_URLS|[\"http://127.0.0.1:9200\"]"`
+		Concurrency  int      `yaml:"concurrency" default:"$LOGTUBED_ES_CONCURRENCY|3"`
+		BatchSize    int      `yaml:"batch_size" default:"$LOGTUBED_ES_BATCH_SIZE|100"`
+		BatchTimeout int      `yaml:"batch_timeout" default:"$LOGTUBED_ES_BATCH_TIMEOUT|3"`
 	} `yaml:"output_es"`
 	OutputLocal struct {
-		Enabled bool   `yaml:"enabled"`
-		Dir     string `yaml:"dir"`
+		Enabled bool   `yaml:"enabled" default:"$LOGTUBED_LOCAL_ENABLED|false"`
+		Dir     string `yaml:"dir" default:"$LOGTUBED_LOCAL_DIR|/var/log/logtubed"`
 	} `yaml:"output_local"`
-}
-
-func loadOptionsFile(filename string) (opt Options, err error) {
-	var buf []byte
-	// read and unmarshal
-	if buf, err = ioutil.ReadFile(filename); err != nil {
-		return
-	}
-	if err = yaml.Unmarshal(buf, &opt); err != nil {
-		return
-	}
-	return
 }
 
 // LoadOptions load options from yaml file
 func LoadOptions(filename string) (opt Options, err error) {
-	if opt, err = loadOptionsFile(filename); err != nil {
+	if err = common.LoadYAMLConfigFile(filename, &opt); err != nil {
 		return
 	}
 	if len(opt.Hostname) == 0 {
@@ -73,34 +58,5 @@ func LoadOptions(filename string) (opt Options, err error) {
 	if len(opt.Hostname) == 0 {
 		opt.Hostname = "localhost"
 	}
-	defaultStr(&opt.InputRedis.Bind, "0.0.0.0:6379")
-	defaultStr(&opt.InputSPTP.Bind, "0.0.0.0:9921")
-	defaultStr(&opt.Queue.Dir, "/var/lib/logtubed")
-	defaultStr(&opt.Queue.Name, "logtubed")
-	defaultInt(&opt.Queue.SyncEvery, 100)
-	defaultStrSlice(&opt.OutputES.URLs, []string{"http://127.0.0.1:9200"})
-	defaultInt(&opt.OutputES.BatchSize, 100)
-	defaultInt(&opt.OutputES.BatchTimeout, 3)
-	defaultStr(&opt.OutputLocal.Dir, "/var/log")
-	defaultStr(&opt.PProf.Bind, "0.0.0.0:6060")
 	return
-}
-
-func defaultStr(v *string, defaultValue string) {
-	*v = strings.TrimSpace(*v)
-	if len(*v) == 0 {
-		*v = defaultValue
-	}
-}
-
-func defaultStrSlice(v *[]string, defaultValue []string) {
-	if len(*v) == 0 {
-		*v = defaultValue
-	}
-}
-
-func defaultInt(v *int, defaultValue int) {
-	if *v <= 0 {
-		*v = defaultValue
-	}
 }
