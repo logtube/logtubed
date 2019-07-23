@@ -7,8 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/logtube/logtubed/internal"
-	"github.com/logtube/logtubed/internal/runner"
-	"github.com/logtube/logtubed/internal/systemd"
 	"github.com/logtube/logtubed/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -242,20 +240,20 @@ func main() {
 	doneL1 := make(chan interface{})
 
 	// ignite L3
-	rgL3 := runner.NewGroup(outputEsStd, outputEsPri)
+	rgL3 := common.NewRunnableGroup(outputEsStd, outputEsPri)
 	go rgL3.Run(ctxL3, cancelL3, doneL3)
 	time.Sleep(time.Millisecond * 100)
 
 	// ignite L2
-	rgL2 := runner.NewGroup(queuePri, queueStd, outputLocal)
+	rgL2 := common.NewRunnableGroup(queuePri, queueStd, outputLocal)
 	go rgL2.Run(ctxL2, cancelL2, doneL2)
 	time.Sleep(time.Millisecond * 100)
 
 	// ignite L1
-	rgL1 := runner.NewGroup(inputSPTP, inputRedis)
+	rgL1 := common.NewRunnableGroup(inputSPTP, inputRedis)
 	if inputSPTP == nil && inputRedis == nil {
 		log.Info().Msg("no inputs, running in drain mode")
-		rgL1.Add(runner.DummyRunnable())
+		rgL1.Add(common.DummyRunnable)
 	}
 	go rgL1.Run(ctxL1, cancelL1, doneL1)
 	time.Sleep(time.Millisecond * 100)
@@ -265,7 +263,7 @@ func main() {
 	go http.ListenAndServe(opts.PProf.Bind, nil)
 
 	// notify systemd
-	_, _ = systemd.SdNotify(false, systemd.SdNotifyReady)
+	_, _ = common.SdNotify(false, common.SdNotifyReady)
 
 	// signal ch
 	chsig := make(chan os.Signal, 3)
@@ -277,6 +275,9 @@ func main() {
 	case sig := <-chsig:
 		log.Info().Str("signal", sig.String()).Msg("signal caught")
 	}
+
+	// notify systemd
+	_, _ = common.SdNotify(false, common.SdNotifyStopping)
 
 	// cancel L1
 	cancelL1()

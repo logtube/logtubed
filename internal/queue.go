@@ -3,9 +3,9 @@ package internal
 import (
 	"context"
 	"errors"
-	"github.com/logtube/logtubed/internal/runner"
 	"github.com/logtube/logtubed/types"
 	"github.com/rs/zerolog/log"
+	"go.guoyk.net/common"
 	"go.guoyk.net/diskqueue"
 	"os"
 	"time"
@@ -21,7 +21,7 @@ type QueueOptions struct {
 
 type Queue interface {
 	types.OpConsumer
-	runner.Runnable
+	common.Runnable
 	Depth() int64
 }
 

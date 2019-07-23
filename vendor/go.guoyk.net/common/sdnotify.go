@@ -19,7 +19,7 @@
 // events, and other status changes.
 //
 // https://www.freedesktop.org/software/systemd/man/sd_notify.html#Description
-package systemd
+package common
 
 import (
 	"net"

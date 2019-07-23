@@ -2,9 +2,9 @@ package internal
 
 import (
 	"errors"
-	"github.com/logtube/logtubed/internal/errutil"
 	"github.com/logtube/logtubed/types"
 	"github.com/rs/zerolog/log"
+	"go.guoyk.net/common"
 )
 
 type DispatcherOptions struct {
@@ -72,7 +72,7 @@ func (d *dispatcher) ConsumeEvent(e types.Event) error {
 	if d.tKey[e.Topic] && len(e.Keyword) == 0 {
 		return nil
 	}
-	eg := errutil.UnsafeGroup()
+	eg := common.NewErrorGroup()
 	if d.next != nil {
 		// delivery to Next, i.e. LocalOutput, if set
 		eg.Add(d.next.ConsumeEvent(e))

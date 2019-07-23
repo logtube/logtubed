@@ -16,7 +16,7 @@ require (
 	github.com/rs/zerolog v1.14.3
 	github.com/stretchr/testify v1.3.0
 	go.guoyk.net/byteflow v1.0.0
-	go.guoyk.net/common v1.0.0
+	go.guoyk.net/common v1.1.0
 	go.guoyk.net/diskqueue v1.0.1
 	go.guoyk.net/redcon v1.0.0
 	go.guoyk.net/sptp v1.0.0

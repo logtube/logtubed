@@ -1,6 +1,11 @@
-package runner
+package common
 
 import "context"
+
+var (
+	// DummyRunnable dummy runnable implements, does nothing but waits for ctx.Done()
+	DummyRunnable Runnable = &dummyRunnable{}
+)
 
 // Runnable is similar with Java Runnable
 type Runnable interface {
@@ -8,14 +13,9 @@ type Runnable interface {
 	Run(ctx context.Context) error
 }
 
-type dummyRunnable struct {
-}
+type dummyRunnable struct{}
 
 func (*dummyRunnable) Run(ctx context.Context) error {
 	<-ctx.Done()
 	return nil
-}
-
-func DummyRunnable() Runnable {
-	return &dummyRunnable{}
 }

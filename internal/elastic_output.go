@@ -2,10 +2,10 @@ package internal
 
 import (
 	"context"
-	"github.com/logtube/logtubed/internal/runner"
 	"github.com/logtube/logtubed/types"
 	"github.com/olivere/elastic"
 	"github.com/rs/zerolog/log"
+	"go.guoyk.net/common"
 	"time"
 )
 
@@ -18,7 +18,7 @@ type ElasticOutputOptions struct {
 
 type ElasticOutput interface {
 	types.OpConsumer
-	runner.Runnable
+	common.Runnable
 }
 
 // ElasticOutput implements OpConsumer and Runnable

@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/logtube/logtubed/internal/errutil"
-	"github.com/logtube/logtubed/internal/runner"
 	"github.com/logtube/logtubed/types"
 	"github.com/rs/zerolog/log"
+	"go.guoyk.net/common"
 	"io"
 	"os"
 	"path/filepath"
@@ -19,7 +18,7 @@ type LocalOutputOptions struct {
 }
 
 type LocalOutput interface {
-	runner.Runnable
+	common.Runnable
 	types.EventConsumer
 }
 
@@ -100,7 +99,7 @@ func (l *localOutput) takeFile(index string) (f *os.File, err error) {
 }
 
 func (l *localOutput) closeFiles() error {
-	eg := errutil.UnsafeGroup()
+	eg := common.NewErrorGroup()
 	for _, f := range l.fs {
 		log.Debug().Str("output", "local").Str("file", f.Name()).Msg("file closed")
 		eg.Add(f.Close())

@@ -3,9 +3,9 @@ package internal
 import (
 	"context"
 	"errors"
-	"github.com/logtube/logtubed/internal/runner"
 	"github.com/logtube/logtubed/types"
 	"github.com/rs/zerolog/log"
+	"go.guoyk.net/common"
 	"go.guoyk.net/sptp"
 	"net"
 )
@@ -16,7 +16,7 @@ type SPTPInputOptions struct {
 }
 
 type SPTPInput interface {
-	runner.Runnable
+	common.Runnable
 }
 
 type sptpInput struct {

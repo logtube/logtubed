@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/logtube/logtubed/internal/runner"
 	"github.com/logtube/logtubed/types"
 	"github.com/rs/zerolog/log"
+	"go.guoyk.net/common"
 	"go.guoyk.net/redcon"
 	"strings"
 	"sync"
@@ -21,7 +21,7 @@ type RedisInputOptions struct {
 }
 
 type RedisInput interface {
-	runner.Runnable
+	common.Runnable
 }
 
 type redisInput struct {
