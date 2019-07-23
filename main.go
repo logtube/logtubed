@@ -12,6 +12,7 @@ import (
 	"github.com/logtube/logtubed/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"go.guoyk.net/common"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -65,6 +66,27 @@ func handleStats(qs ...internal.Queue) http.HandlerFunc {
 	}
 }
 
+// loadOptions load options from yaml file
+func loadOptions(filename string) (opt Options, err error) {
+	if err = common.LoadYAMLConfigFile(filename, &opt); err != nil {
+		if os.IsNotExist(err) {
+			if err = common.SetDefaults(&opt); err != nil {
+				return
+			}
+			log.Info().Str("filename", filename).Msg("config file not found, loading from defaults and envs")
+		} else {
+			return
+		}
+	}
+	if len(opt.Hostname) == 0 {
+		opt.Hostname, _ = os.Hostname()
+	}
+	if len(opt.Hostname) == 0 {
+		opt.Hostname = "localhost"
+	}
+	return
+}
+
 func main() {
 	var (
 		err error
@@ -106,7 +128,7 @@ func main() {
 
 	// load options
 	log.Info().Str("file", optCfgFile).Msg("load options file")
-	if opts, err = LoadOptions(optCfgFile); err != nil {
+	if opts, err = loadOptions(optCfgFile); err != nil {
 		log.Error().Err(err).Msg("failed to load options file")
 		return
 	}
@@ -115,6 +137,8 @@ func main() {
 	if opts.Verbose = opts.Verbose || optVerbose; opts.Verbose {
 		setupZerolog(true)
 	}
+
+	log.Info().Interface("options", opts).Msg("options loaded")
 
 	// configure mutex and block rate
 	runtime.SetMutexProfileFraction(opts.PProf.Mutex)

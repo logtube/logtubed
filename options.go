@@ -1,10 +1,5 @@
 package main
 
-import (
-	"go.guoyk.net/common"
-	"os"
-)
-
 // Options options for logtubed
 type Options struct {
 	Verbose  bool   `yaml:"verbose" default:"$LOGTUBED_VERBOSE|false"`
@@ -45,18 +40,4 @@ type Options struct {
 		Enabled bool   `yaml:"enabled" default:"$LOGTUBED_LOCAL_ENABLED|false"`
 		Dir     string `yaml:"dir" default:"$LOGTUBED_LOCAL_DIR|/var/log/logtubed"`
 	} `yaml:"output_local"`
-}
-
-// LoadOptions load options from yaml file
-func LoadOptions(filename string) (opt Options, err error) {
-	if err = common.LoadYAMLConfigFile(filename, &opt); err != nil {
-		return
-	}
-	if len(opt.Hostname) == 0 {
-		opt.Hostname, _ = os.Hostname()
-	}
-	if len(opt.Hostname) == 0 {
-		opt.Hostname = "localhost"
-	}
-	return
 }
