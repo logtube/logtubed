@@ -147,10 +147,10 @@ func main() {
 			appendVerbose("✅ ES %d 连接成功", i+1)
 		}
 		// check number of nodes
-		if h.NumberOfNodes != len(options.ESHealthEndpoints) {
-			appendMessage("❌️ ES %d 节点数异常: %d", i+1, h.NumberOfNodes)
+		if h.NumberOfNodes != len(options.ESHealthEndpoints) || h.Status == "red" {
+			appendVerbose("❌️ ES %d 节点异常：%s(%d)", i+1, h.Status, h.NumberOfNodes)
 		} else {
-			appendVerbose("✅ ES %d 节点信息：%+v", i+1, h)
+			appendVerbose("✅ ES %d 节点信息：%s(%d)", i+1, h.Status, h.NumberOfNodes)
 		}
 	}
 
