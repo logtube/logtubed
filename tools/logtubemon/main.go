@@ -11,13 +11,9 @@ import (
 	"os"
 )
 
-type LogtubeStatsData struct {
-	Time  string `json:"time"`
-	Value uint64 `json:"value"`
-}
-
 type LogtubeStats struct {
-	QueueDepth []LogtubeStatsData `json:"queue_depth"`
+	QueueStdDepth int64 `json:"queue-std-depth"`
+	QueuePriDepth int64 `json:"queue-pri-depth"`
 }
 
 type ESHealth struct {
@@ -27,7 +23,7 @@ type ESHealth struct {
 
 type Options struct {
 	URL                   string   `json:"url"`
-	QueueThreshold        uint64   `json:"queue_threshold"`
+	QueueThreshold        int64    `json:"queue_threshold"`
 	LogtubeStatsEndpoints []string `json:"logtube_stats_endpoints"`
 	ESHealthEndpoints     []string `json:"es_health_endpoints"`
 }
@@ -36,6 +32,7 @@ type State map[string]bool
 
 var (
 	optOptions string
+	optVerbose bool
 
 	options Options
 
@@ -89,6 +86,12 @@ func appendMessage(format string, item ...interface{}) {
 	log.Printf(format+"\n", item...)
 }
 
+func appendVerbose(format string, item ...interface{}) {
+	if optVerbose {
+		fmt.Printf(format+"\n", item...)
+	}
+}
+
 func exit(err *error) {
 	if *err != nil {
 		log.Println((*err).Error())
@@ -101,6 +104,7 @@ func main() {
 	defer exit(&err)
 
 	flag.StringVar(&optOptions, "c", "/etc/logtubemon.json", "config file for logtubemon")
+	flag.BoolVar(&optVerbose, "v", false, "verbose mode")
 	flag.Parse()
 
 	// load config and state
@@ -115,14 +119,20 @@ func main() {
 		if err = getJSON(url, &d); err != nil {
 			appendMessage("❌ Logtubed %d 无法监控: %s", i+1, err.Error())
 			continue
+		} else {
+			appendVerbose("✅ Logtubed %d 连接成功", i+1)
 		}
-		if len(d.QueueDepth) < 1 {
-			continue
+		// check queue std depth
+		if d.QueuePriDepth > options.QueueThreshold {
+			appendMessage("❌ Logtubed %d 高级队列过深: %d", i+1, d.QueuePriDepth)
+		} else {
+			appendVerbose("✅ Logtubed %d 高级队列深度：%d", i+1, d.QueuePriDepth)
 		}
-		// check queue depth
-		depth := d.QueueDepth[len(d.QueueDepth)-1].Value
-		if depth > options.QueueThreshold {
-			appendMessage("❌ Logtubed %d 队列过深: %d", i+1, depth)
+		// check queue pri depth
+		if d.QueueStdDepth > options.QueueThreshold {
+			appendMessage("❌ Logtubed %d 标准队列过深: %d", i+1, d.QueueStdDepth)
+		} else {
+			appendVerbose("✅ Logtubed %d 标准队列深度：%d", i+1, d.QueueStdDepth)
 		}
 	}
 
@@ -133,10 +143,14 @@ func main() {
 		if err = getJSON(url, &h); err != nil {
 			appendMessage("❌️ ES %d 无法连接: %s", i+1, err.Error())
 			continue
+		} else {
+			appendVerbose("✅ ES %d 连接成功", i+1)
 		}
 		// check number of nodes
 		if h.NumberOfNodes != len(options.ESHealthEndpoints) {
 			appendMessage("❌️ ES %d 节点数异常: %d", i+1, h.NumberOfNodes)
+		} else {
+			appendVerbose("✅ ES %d 节点信息：%+v", i+1, h)
 		}
 	}
 
