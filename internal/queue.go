@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"expvar"
 	"github.com/logtube/logtubed/types"
 	"github.com/rs/zerolog/log"
 	"go.guoyk.net/common"
@@ -17,6 +18,10 @@ type QueueOptions struct {
 	SyncEvery int
 
 	Next types.OpConsumer
+
+	VarInput  *expvar.Int
+	VarOutput *expvar.Int
+	VarDepth  *expvar.Int
 }
 
 type Queue interface {
@@ -33,6 +38,10 @@ type queue struct {
 	dq diskqueue.DiskQueue
 
 	next types.OpConsumer
+
+	varInput  *expvar.Int
+	varOutput *expvar.Int
+	varDepth  *expvar.Int
 }
 
 func NewQueue(opts QueueOptions) (Queue, error) {
@@ -57,6 +66,9 @@ func NewQueue(opts QueueOptions) (Queue, error) {
 		optName:      opts.Name,
 		optSyncEvery: opts.SyncEvery,
 		next:         opts.Next,
+		varInput:     opts.VarInput,
+		varOutput:    opts.VarOutput,
+		varDepth:     opts.VarDepth,
 	}
 	return q, nil
 }
@@ -75,7 +87,10 @@ func (q *queue) Depth() int64 {
 func (q *queue) ConsumeOp(op types.Op) error {
 	dq := q.dq
 	if dq == nil {
-		return errors.New("Queue: not running")
+		return errors.New("queue: not running")
+	}
+	if q.varInput != nil {
+		q.varInput.Add(1)
 	}
 	return dq.Put(types.OpMarshal(op))
 }
@@ -95,17 +110,31 @@ func (q *queue) Run(ctx context.Context) error {
 	)
 	q.dq = dq
 
+	// create depth stats ticker
+	st := time.NewTicker(time.Second)
+	defer st.Stop()
+
 loop:
 	for {
 		select {
 		case buf := <-dq.ReadChan():
+			if q.varOutput != nil {
+				q.varOutput.Add(1)
+			}
+
 			var op types.Op
 			var err error
 			if op, err = types.OpUnmarshal(buf); err != nil {
 				log.Error().Err(err).Msg("Queue: failed to unmarshal Op")
+				continue loop
 			}
 			if err = q.next.ConsumeOp(op); err != nil {
 				log.Error().Err(err).Msg("Queue: OpConsumer failed to ConsumeOp")
+				continue loop
+			}
+		case <-st.C:
+			if q.varDepth != nil {
+				q.varDepth.Set(dq.Depth())
 			}
 		case <-ctx.Done():
 			break loop

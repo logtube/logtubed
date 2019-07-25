@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"expvar"
 	"flag"
 	"fmt"
 	"github.com/logtube/logtubed/internal"
@@ -158,6 +159,9 @@ func main() {
 			Name:      opts.Queue.Name,
 			SyncEvery: opts.Queue.SyncEvery,
 			Next:      outputEsStd,
+			VarInput:  expvar.NewInt("queue-std-input"),
+			VarOutput: expvar.NewInt("queue-std-output"),
+			VarDepth:  expvar.NewInt("queue-std-depth"),
 		}); err != nil {
 			return
 		}
@@ -177,6 +181,9 @@ func main() {
 				Name:      opts.Queue.Name + "-pri",
 				SyncEvery: opts.Queue.SyncEvery,
 				Next:      outputEsPri,
+				VarInput:  expvar.NewInt("queue-pri-input"),
+				VarOutput: expvar.NewInt("queue-pri-output"),
+				VarDepth:  expvar.NewInt("queue-pri-depth"),
 			}); err != nil {
 				return
 			}
