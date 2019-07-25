@@ -89,13 +89,20 @@ func (e *elasticOutput) Run(ctx context.Context) error {
 	log.Info().Str("output", "elastic").Msg("started")
 	defer log.Info().Str("output", "elastic").Msg("stopped")
 
+	// committee context
+	cCtx, cCancel := context.WithCancel(context.Background())
+	defer cCancel()
+
+	// ignite committees
 	for i := 0; i < e.optConcurrency; i++ {
-		go e.runCommitter(ctx)
+		go e.runCommitter(cCtx)
 	}
 
+	// ticker
 	t := time.NewTicker(e.optBatchTimeout)
 	defer t.Stop()
 
+	// bulk service
 	var bs *elastic.BulkService
 
 	submit := func() {
