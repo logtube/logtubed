@@ -27,7 +27,6 @@ type QueueOptions struct {
 type Queue interface {
 	types.OpConsumer
 	common.Runnable
-	Depth() int64
 }
 
 type queue struct {
@@ -71,17 +70,6 @@ func NewQueue(opts QueueOptions) (Queue, error) {
 		varDepth:     opts.VarDepth,
 	}
 	return q, nil
-}
-
-func (q *queue) Depth() int64 {
-	if q == nil {
-		return 0
-	}
-	dq := q.dq
-	if dq == nil {
-		return 0
-	}
-	return dq.Depth()
 }
 
 func (q *queue) ConsumeOp(op types.Op) error {

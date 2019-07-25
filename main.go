@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"expvar"
 	"flag"
@@ -43,26 +42,6 @@ func setupZerolog(verbose bool) {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: !verbose, TimeFormat: time.RFC3339})
-}
-
-func handleStats(qs ...internal.Queue) http.HandlerFunc {
-	return func(rw http.ResponseWriter, r *http.Request) {
-		var val int64
-		for _, q := range qs {
-			val += q.Depth()
-		}
-		out := map[string]interface{}{
-			"queue_depth": []interface{}{
-				map[string]interface{}{
-					"time":  time.Now(),
-					"value": val,
-				},
-			},
-		}
-		buf, _ := json.Marshal(out)
-		rw.Header().Set("Content-Type", "application/json")
-		_, _ = rw.Write(buf)
-	}
 }
 
 // loadOptions load options from yaml file
@@ -265,8 +244,7 @@ func main() {
 	go rgL1.Run(ctxL1, cancelL1, doneL1)
 	time.Sleep(time.Millisecond * 100)
 
-	// ignite pprof / stats
-	http.HandleFunc("/stats", handleStats(queueStd, queuePri))
+	// ignite pprof / expvar
 	go http.ListenAndServe(opts.PProf.Bind, nil)
 
 	// notify systemd
