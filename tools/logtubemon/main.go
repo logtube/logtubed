@@ -123,7 +123,7 @@ func main() {
 	if len(options.ESAllocEndpoint) > 0 {
 		var as []ESAlloc
 		if err = common.GetJSON(options.ESAllocEndpoint, &as); err != nil {
-			appendVerbose("❌️ 无法查询 ES 磁盘信息")
+			appendVerbose("❌️ 无法查询 ES 磁盘信息：%s", err.Error())
 		} else {
 			appendVerbose("✅ ES 磁盘信息已获取，%+v", as)
 		}
