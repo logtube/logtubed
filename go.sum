@@ -42,8 +42,8 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/zenazn/goji v0.9.0/go.mod h1:7S9M489iMyHBNxwZnk9/EHS098H4/F6TATF2mIxtB1Q=
 go.guoyk.net/byteflow v1.0.0 h1:aA0fRIah2j1W+R+7FW5ChLeHvUY1/q+60+ESHoR3Qmo=
 go.guoyk.net/byteflow v1.0.0/go.mod h1:Ns5x75CmTCPgPg9QjSm8puFHaHowdtKta0n+OUhkHD4=
-go.guoyk.net/common v1.1.0 h1:4X8VI0y1+4d8+prEHbLPTgp6UwrfTDPk8tfzz3D0/WA=
-go.guoyk.net/common v1.1.0/go.mod h1:XfLdCWS9hoqn8q2My3G5ivY5BX42VNb45dpf1aw+vIE=
+go.guoyk.net/common v1.3.0 h1:9J7+GsMRIM5wlWdUBhAJb8e/wWcO6C6tvX9xqiEnW8A=
+go.guoyk.net/common v1.3.0/go.mod h1:XfLdCWS9hoqn8q2My3G5ivY5BX42VNb45dpf1aw+vIE=
 go.guoyk.net/diskqueue v1.0.1 h1:2BoPqBi/ATn5bg2tJNlf25y9APnX6YFxAZV7uYVDOzg=
 go.guoyk.net/diskqueue v1.0.1/go.mod h1:UNc6nZbJsyE7UJF3meZ9iZ373vl5eE2aohhFcLsBjdQ=
 go.guoyk.net/redcon v1.0.0 h1:idGeqgrlsjv1mLKcW3BdAFpnxUxnp9KJlZQgWVIiorc=

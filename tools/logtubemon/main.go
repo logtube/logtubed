@@ -1,15 +1,15 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"go.guoyk.net/common"
 	"log"
-	"net/http"
 	"os"
+	"strconv"
 )
+
+type M map[string]interface{}
 
 type LogtubeStats struct {
 	QueueStdDepth int64 `json:"queue-std-depth"`
@@ -21,14 +21,18 @@ type ESHealth struct {
 	NumberOfNodes int    `json:"number_of_nodes"`
 }
 
+type ESAlloc struct {
+	Node        string `json:"node"`
+	DiskPercent string `json:"disk.percent"`
+}
+
 type Options struct {
 	URL                   string   `json:"url"`
+	ESAllocEndpoint       string   `json:"es_alloc_endpoint"`
 	QueueThreshold        int64    `json:"queue_threshold"`
 	LogtubeStatsEndpoints []string `json:"logtube_stats_endpoints"`
 	ESHealthEndpoints     []string `json:"es_health_endpoints"`
 }
-
-type State map[string]bool
 
 var (
 	optOptions string
@@ -36,53 +40,14 @@ var (
 
 	options Options
 
-	message string
+	content string
 )
 
-func getJSON(url string, out interface{}) (err error) {
-	var resp *http.Response
-	if resp, err = http.Get(url); err != nil {
-		return
+func appendAlert(format string, item ...interface{}) {
+	if len(content) > 0 {
+		content = content + "\n"
 	}
-	defer resp.Body.Close()
-	var buf []byte
-	if buf, err = ioutil.ReadAll(resp.Body); err != nil {
-		return
-	}
-	err = json.Unmarshal(buf, out)
-	return
-}
-
-func postJSON(url string, in interface{}) (err error) {
-	var buf []byte
-	if buf, err = json.Marshal(in); err != nil {
-		return
-	}
-	var resp *http.Response
-	if resp, err = http.Post(url, "application/json", bytes.NewReader(buf)); err != nil {
-		return
-	}
-	defer resp.Body.Close()
-	return
-}
-
-func loadJSON(file string, out interface{}) (err error) {
-	var buf []byte
-	if buf, err = ioutil.ReadFile(file); err != nil {
-		if os.IsNotExist(err) {
-			err = nil
-		}
-		return
-	}
-	err = json.Unmarshal(buf, out)
-	return
-}
-
-func appendMessage(format string, item ...interface{}) {
-	if len(message) > 0 {
-		message = message + "\n"
-	}
-	message = message + fmt.Sprintf(format, item...)
+	content = content + fmt.Sprintf(format, item...)
 	log.Printf(format+"\n", item...)
 }
 
@@ -108,7 +73,7 @@ func main() {
 	flag.Parse()
 
 	// load config and state
-	if err = loadJSON(optOptions, &options); err != nil {
+	if err = common.LoadJSONConfigFile(optOptions, &options); err != nil {
 		return
 	}
 
@@ -116,21 +81,21 @@ func main() {
 	for i, url := range options.LogtubeStatsEndpoints {
 		// fetch stats
 		var d LogtubeStats
-		if err = getJSON(url, &d); err != nil {
-			appendMessage("❌ Logtubed %d 无法监控: %s", i+1, err.Error())
+		if err = common.GetJSON(url, &d); err != nil {
+			appendAlert("❌ Logtubed %d 无法监控: %s", i+1, err.Error())
 			continue
 		} else {
 			appendVerbose("✅ Logtubed %d 连接成功", i+1)
 		}
 		// check queue std depth
 		if d.QueuePriDepth > options.QueueThreshold {
-			appendMessage("❌ Logtubed %d 高级队列过深: %d", i+1, d.QueuePriDepth)
+			appendAlert("❌ Logtubed %d 高级队列过深: %d", i+1, d.QueuePriDepth)
 		} else {
 			appendVerbose("✅ Logtubed %d 高级队列深度：%d", i+1, d.QueuePriDepth)
 		}
 		// check queue pri depth
 		if d.QueueStdDepth > options.QueueThreshold {
-			appendMessage("❌ Logtubed %d 标准队列过深: %d", i+1, d.QueueStdDepth)
+			appendAlert("❌ Logtubed %d 标准队列过深: %d", i+1, d.QueueStdDepth)
 		} else {
 			appendVerbose("✅ Logtubed %d 标准队列深度：%d", i+1, d.QueueStdDepth)
 		}
@@ -140,8 +105,8 @@ func main() {
 	for i, url := range options.ESHealthEndpoints {
 		// fetch health
 		var h ESHealth
-		if err = getJSON(url, &h); err != nil {
-			appendMessage("❌️ ES %d 无法连接: %s", i+1, err.Error())
+		if err = common.GetJSON(url, &h); err != nil {
+			appendAlert("❌️ ES %d 无法连接: %s", i+1, err.Error())
 			continue
 		} else {
 			appendVerbose("✅ ES %d 连接成功", i+1)
@@ -154,12 +119,26 @@ func main() {
 		}
 	}
 
-	if len(message) > 0 {
-		_ = postJSON(options.URL, map[string]interface{}{
-			"msgtype": "text",
-			"text": map[string]interface{}{
-				"content": message,
-			},
-		})
+	// check es allocation
+	if len(options.ESAllocEndpoint) > 0 {
+		var as []ESAlloc
+		if err = common.GetJSON(options.ESAllocEndpoint, &as); err != nil {
+			appendVerbose("❌️ 无法查询 ES 磁盘信息")
+		} else {
+			appendVerbose("✅ ES 磁盘信息已获取，%+v", as)
+		}
+
+		for _, a := range as {
+			v, _ := strconv.Atoi(a.DiskPercent)
+			if v > 85 {
+				appendAlert("❌️ ES 磁盘即将用尽：%s = %s%%", a.Node, a.DiskPercent)
+			} else {
+				appendVerbose("✅️ ES 磁盘状态：%s = %s%%", a.Node, a.DiskPercent)
+			}
+		}
+	}
+
+	if len(content) > 0 {
+		_ = common.PostJSON(options.URL, M{"msgtype": "text", "text": M{"content": content}}, nil)
 	}
 }
