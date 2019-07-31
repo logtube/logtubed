@@ -113,7 +113,7 @@ func main() {
 		}
 		// check number of nodes
 		if h.NumberOfNodes != len(options.ESHealthEndpoints) || h.Status == "red" {
-			appendVerbose("❌️ ES %d 节点异常：%s(%d)", i+1, h.Status, h.NumberOfNodes)
+			appendAlert("❌️ ES %d 节点异常：%s(%d)", i+1, h.Status, h.NumberOfNodes)
 		} else {
 			appendVerbose("✅ ES %d 节点信息：%s(%d)", i+1, h.Status, h.NumberOfNodes)
 		}
@@ -123,7 +123,7 @@ func main() {
 	if len(options.ESAllocEndpoint) > 0 {
 		var as []ESAlloc
 		if err = common.GetJSON(options.ESAllocEndpoint, &as); err != nil {
-			appendVerbose("❌️ 无法查询 ES 磁盘信息：%s", err.Error())
+			appendAlert("❌️ 无法查询 ES 磁盘信息：%s", err.Error())
 		} else {
 			appendVerbose("✅ ES 磁盘信息已获取，%+v", as)
 		}
