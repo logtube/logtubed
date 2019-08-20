@@ -13,10 +13,11 @@ require (
 	github.com/olivere/elastic v6.2.18+incompatible
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/rs/zerolog v1.14.3
 	github.com/stretchr/testify v1.3.0
 	go.guoyk.net/byteflow v1.0.0
-	go.guoyk.net/common v1.3.0
+	go.guoyk.net/common v1.5.0
 	go.guoyk.net/diskqueue v1.0.1
 	go.guoyk.net/redcon v1.0.0
 	go.guoyk.net/sptp v1.0.0

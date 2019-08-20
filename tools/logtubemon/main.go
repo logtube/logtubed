@@ -17,8 +17,9 @@ type LogtubeStats struct {
 }
 
 type ESHealth struct {
-	Status        string `json:"status"`
-	NumberOfNodes int    `json:"number_of_nodes"`
+	Status                 string  `json:"status"`
+	NumberOfNodes          int     `json:"number_of_nodes"`
+	ActiveShardsPercentage float64 `json:"active_shards_percent_as_number"`
 }
 
 type ESAlloc struct {
@@ -113,9 +114,9 @@ func main() {
 		}
 		// check number of nodes
 		if h.NumberOfNodes != len(options.ESHealthEndpoints) || h.Status == "red" {
-			appendAlert("❌️ ES %d 节点异常：%s(%d)", i+1, h.Status, h.NumberOfNodes)
+			appendAlert("❌️ ES %d 节点异常：%s(%d), %f%%", i+1, h.Status, h.NumberOfNodes, h.ActiveShardsPercentage)
 		} else {
-			appendVerbose("✅ ES %d 节点信息：%s(%d)", i+1, h.Status, h.NumberOfNodes)
+			appendVerbose("✅ ES %d 节点信息：%s(%d), %f%%", i+1, h.Status, h.NumberOfNodes, h.ActiveShardsPercentage)
 		}
 	}
 
