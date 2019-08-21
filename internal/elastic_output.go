@@ -9,7 +9,31 @@ import (
 	"time"
 )
 
+type elasticCommitter struct {
+	name string
+	idx  int
+	bch  chan *elastic.BulkService
+}
+
+func (c *elasticCommitter) Run(ctx context.Context) error {
+	log.Info().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Msg("committer started")
+	for {
+		select {
+		case bs := <-c.bch:
+			if _, err := bs.Do(ctx); err != nil {
+				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Err(err).Msg("bulk failed to commit")
+			} else {
+				log.Debug().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Int("count", bs.NumberOfActions()).Msg("bulk committed")
+			}
+		case <-ctx.Done():
+			log.Info().Int("idx", c.idx).Str("name", c.name).Msg("committer exited")
+			return nil
+		}
+	}
+}
+
 type ElasticOutputOptions struct {
+	Name         string
 	URLs         []string
 	Concurrency  int
 	BatchSize    int
@@ -23,12 +47,12 @@ type ElasticOutput interface {
 
 // ElasticOutput implements OpConsumer and Runnable
 type elasticOutput struct {
+	optName         string
 	optConcurrency  int
 	optBatchSize    int
 	optBatchTimeout time.Duration
 
 	och chan types.Op
-	bch chan *elastic.BulkService
 
 	c *elastic.Client
 }
@@ -52,15 +76,15 @@ func NewElasticOutput(opts ElasticOutputOptions) (ElasticOutput, error) {
 	if c, err = elastic.NewClient(elastic.SetURL(opts.URLs...)); err != nil {
 		return nil, err
 	}
-	log.Info().Str("output", "elastic").Interface("opts", opts).Msg("output created")
 	eo := &elasticOutput{
+		optName:         opts.Name,
 		optConcurrency:  opts.Concurrency,
 		optBatchSize:    opts.BatchSize,
 		optBatchTimeout: opts.BatchTimeout,
 		och:             make(chan types.Op),
-		bch:             make(chan *elastic.BulkService),
 		c:               c,
 	}
+	log.Info().Str("output", "elastic").Str("name", eo.optName).Interface("opts", opts).Msg("output created")
 	return eo, nil
 }
 
@@ -69,34 +93,25 @@ func (e *elasticOutput) ConsumeOp(op types.Op) error {
 	return nil
 }
 
-func (e *elasticOutput) runCommitter(ctx context.Context) {
-	log.Info().Str("output", "elastic").Msg("committer started")
-	for {
-		select {
-		case bs := <-e.bch:
-			if _, err := bs.Do(context.Background()); err != nil {
-				log.Error().Err(err).Msg("ElasticOutput: failed to execute bulk")
-			} else {
-				log.Debug().Int("count", bs.NumberOfActions()).Msg("ElasticOutput: bulk committed")
-			}
-		case <-ctx.Done():
-			return
-		}
-	}
-}
-
 func (e *elasticOutput) Run(ctx context.Context) error {
-	log.Info().Str("output", "elastic").Msg("started")
-	defer log.Info().Str("output", "elastic").Msg("stopped")
+	log.Info().Str("output", "elastic").Str("name", e.optName).Msg("started")
+	defer log.Info().Str("output", "elastic").Str("name", e.optName).Msg("stopped")
 
-	// committee context
-	cCtx, cCancel := context.WithCancel(context.Background())
-	defer cCancel()
+	// bulk service channel
+	bch := make(chan *elastic.BulkService)
 
-	// ignite committees
+	// create committer
+	cs := make([]common.Runnable, 0, e.optConcurrency)
 	for i := 0; i < e.optConcurrency; i++ {
-		go e.runCommitter(cCtx)
+		cs = append(cs, &elasticCommitter{idx: i + 1, bch: bch, name: e.optName})
 	}
+
+	// wait committer done on exit
+	cDone := make(chan error)
+	defer func() { <-cDone }()
+
+	// run committer
+	common.RunAsync(ctx, nil, cDone, cs...)
 
 	// ticker
 	t := time.NewTicker(e.optBatchTimeout)
@@ -108,8 +123,8 @@ func (e *elasticOutput) Run(ctx context.Context) error {
 	submit := func() {
 		// execute batch if not empty
 		if bs != nil && bs.NumberOfActions() > 0 {
-			log.Debug().Str("output", "elastic").Interface("actions", bs.NumberOfActions()).Msg("bulk submitted")
-			e.bch <- bs
+			log.Debug().Str("output", "elastic").Str("name", e.optName).Interface("actions", bs.NumberOfActions()).Msg("bulk submitted")
+			bch <- bs
 			bs = nil
 		}
 	}

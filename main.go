@@ -125,6 +125,7 @@ func main() {
 	// initialize elastic output, and associated queues
 	if opts.OutputES.Enabled {
 		if outputEsStd, err = internal.NewElasticOutput(internal.ElasticOutputOptions{
+			Name:         "std",
 			URLs:         opts.OutputES.URLs,
 			Concurrency:  opts.OutputES.Concurrency,
 			BatchSize:    opts.OutputES.BatchSize,
@@ -147,6 +148,7 @@ func main() {
 
 		if len(opts.Topics.Priors) > 0 {
 			if outputEsPri, err = internal.NewElasticOutput(internal.ElasticOutputOptions{
+				Name:         "pri",
 				URLs:         opts.OutputES.URLs,
 				Concurrency:  opts.OutputES.Concurrency,
 				BatchSize:    opts.OutputES.BatchSize,
@@ -217,31 +219,30 @@ func main() {
 
 	// contexts
 	ctxL3, cancelL3 := context.WithCancel(context.Background())
-	doneL3 := make(chan interface{})
+	doneL3 := make(chan error)
 
 	ctxL2, cancelL2 := context.WithCancel(ctxL3)
-	doneL2 := make(chan interface{})
+	doneL2 := make(chan error)
 
 	ctxL1, cancelL1 := context.WithCancel(ctxL2)
-	doneL1 := make(chan interface{})
+	doneL1 := make(chan error)
 
 	// ignite L3
-	rgL3 := common.NewRunnableGroup(outputEsStd, outputEsPri)
-	go rgL3.Run(ctxL3, cancelL3, doneL3)
+	log.Info().Msg("L3 ignite")
+	common.RunAsync(ctxL3, cancelL3, doneL3, outputEsStd, outputEsPri)
 	time.Sleep(time.Millisecond * 100)
 
 	// ignite L2
-	rgL2 := common.NewRunnableGroup(queuePri, queueStd, outputLocal)
-	go rgL2.Run(ctxL2, cancelL2, doneL2)
+	log.Info().Msg("L2 ignite")
+	common.RunAsync(ctxL2, cancelL2, doneL2, queuePri, queueStd, outputLocal)
 	time.Sleep(time.Millisecond * 100)
 
 	// ignite L1
-	rgL1 := common.NewRunnableGroup(inputSPTP, inputRedis)
 	if inputSPTP == nil && inputRedis == nil {
 		log.Info().Msg("no inputs, running in drain mode")
-		rgL1.Add(common.DummyRunnable)
 	}
-	go rgL1.Run(ctxL1, cancelL1, doneL1)
+	log.Info().Msg("L1 ignite")
+	common.RunAsync(ctxL1, cancelL1, doneL1, inputSPTP, inputRedis, common.DummyRunnable)
 	time.Sleep(time.Millisecond * 100)
 
 	// ignite pprof / expvar
@@ -266,13 +267,25 @@ func main() {
 
 	// cancel L1
 	cancelL1()
-	<-doneL1
+	if err = <-doneL1; err != nil {
+		log.Error().Err(err).Msg("L1 cut off failed")
+	} else {
+		log.Info().Msg("L1 cut off")
+	}
 
 	// cancel L2
 	cancelL2()
-	<-doneL2
+	if err = <-doneL2; err != nil {
+		log.Error().Err(err).Msg("L2 cut off failed")
+	} else {
+		log.Info().Msg("L2 cut off")
+	}
 
 	// cancel L3
 	cancelL3()
-	<-doneL3
+	if err = <-doneL3; err != nil {
+		log.Error().Err(err).Msg("L3 cut off failed")
+	} else {
+		log.Info().Msg("L3 cut off")
+	}
 }
