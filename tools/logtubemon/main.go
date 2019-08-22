@@ -27,6 +27,11 @@ type ESAlloc struct {
 	DiskPercent string `json:"disk.percent"`
 }
 
+type ESIndex struct {
+	Index     string `json:"index"`
+	StoreSize string `json:"store.size"`
+}
+
 type Options struct {
 	URL                   string   `json:"url"`
 	ESAllocEndpoint       string   `json:"es_alloc_endpoint"`
