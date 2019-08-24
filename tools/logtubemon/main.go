@@ -1,71 +1,54 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"go.guoyk.net/common"
 	"log"
+	"math/rand"
 	"os"
-	"strconv"
 )
 
 type M map[string]interface{}
 
-type LogtubeStats struct {
-	QueueStdDepth int64 `json:"queue-std-depth"`
-	QueuePriDepth int64 `json:"queue-pri-depth"`
-}
-
-type ESHealth struct {
-	Status                 string  `json:"status"`
-	NumberOfNodes          int     `json:"number_of_nodes"`
-	ActiveShardsPercentage float64 `json:"active_shards_percent_as_number"`
-}
-
-type ESAlloc struct {
-	Node        string `json:"node"`
-	DiskPercent string `json:"disk.percent"`
-}
-
-type ESIndex struct {
-	Index     string `json:"index"`
-	StoreSize string `json:"store.size"`
-}
-
 type Options struct {
-	URL                   string   `json:"url"`
-	ESAllocEndpoint       string   `json:"es_alloc_endpoint"`
-	QueueThreshold        int64    `json:"queue_threshold"`
-	LogtubeStatsEndpoints []string `json:"logtube_stats_endpoints"`
-	ESHealthEndpoints     []string `json:"es_health_endpoints"`
+	BotID    string `yaml:"bot_id"`
+	Logtubed struct {
+		Endpoints      []string `yaml:"endpoints"`
+		QueueThreshold int64    `yaml:"queue_threshold"`
+	} `yaml:"logtubed"`
+	ES struct {
+		Endpoints     []string           `yaml:"endpoints"`
+		DiskThreshold int                `yaml:"disk_threshold"`
+		Weights       map[string]float64 `yaml:"weights"`
+	} `yaml:"es"`
+}
+
+type Measure interface {
+	Name() string
+	Execute(ret *Results)
 }
 
 var (
-	optOptions string
-	optVerbose bool
+	optOptions  string
+	optES       bool
+	optESDisk   bool
+	optLogtubed bool
 
-	options Options
+	opts Options
 
-	content string
+	measures []Measure
 )
 
-func appendAlert(format string, item ...interface{}) {
-	if len(content) > 0 {
-		content = content + "\n"
-	}
-	content = content + fmt.Sprintf(format, item...)
-	log.Printf(format+"\n", item...)
-}
-
-func appendVerbose(format string, item ...interface{}) {
-	if optVerbose {
-		fmt.Printf(format+"\n", item...)
-	}
-}
+const (
+	EmojiPassing = "✅ "
+	EmojiFailed  = "❌ "
+)
 
 func exit(err *error) {
 	if *err != nil {
-		log.Println((*err).Error())
+		log.Printf((*err).Error())
 		os.Exit(1)
 	}
 }
@@ -74,77 +57,71 @@ func main() {
 	var err error
 	defer exit(&err)
 
-	flag.StringVar(&optOptions, "c", "/etc/logtubemon.json", "config file for logtubemon")
-	flag.BoolVar(&optVerbose, "v", false, "verbose mode")
+	flag.StringVar(&optOptions, "c", "/etc/logtubemon.yml", "config file for logtubemon")
+	flag.BoolVar(&optES, "es", false, "enable es check")
+	flag.BoolVar(&optESDisk, "es-disk", false, "enable es disk check")
+	flag.BoolVar(&optLogtubed, "logtubed", false, "enable logtubed check")
 	flag.Parse()
 
-	// load config and state
-	if err = common.LoadJSONConfigFile(optOptions, &options); err != nil {
+	if err = common.LoadYAMLConfigFile(optOptions, &opts); err != nil {
 		return
 	}
 
-	// check logtubed status
-	for i, url := range options.LogtubeStatsEndpoints {
-		// fetch stats
-		var d LogtubeStats
-		if err = common.GetJSON(url, &d); err != nil {
-			appendAlert("❌ Logtubed %d 无法监控: %s", i+1, err.Error())
-			continue
-		} else {
-			appendVerbose("✅ Logtubed %d 连接成功", i+1)
+	if optLogtubed {
+		for i, endpoint := range opts.Logtubed.Endpoints {
+			measures = append(measures, &LogtubeMeasure{
+				name:           fmt.Sprintf("Logtubed %d", i+1),
+				endpoint:       endpoint,
+				queueThreshold: opts.Logtubed.QueueThreshold,
+			})
 		}
-		// check queue std depth
-		if d.QueuePriDepth > options.QueueThreshold {
-			appendAlert("❌ Logtubed %d 高级队列过深: %d", i+1, d.QueuePriDepth)
-		} else {
-			appendVerbose("✅ Logtubed %d 高级队列深度：%d", i+1, d.QueuePriDepth)
+	}
+	if optES {
+		for i, endpoint := range opts.ES.Endpoints {
+			measures = append(measures, &ESMeasure{
+				name:     fmt.Sprintf("ES %d", i+1),
+				endpoint: endpoint,
+				total:    len(opts.ES.Endpoints),
+			})
 		}
-		// check queue pri depth
-		if d.QueueStdDepth > options.QueueThreshold {
-			appendAlert("❌ Logtubed %d 标准队列过深: %d", i+1, d.QueueStdDepth)
-		} else {
-			appendVerbose("✅ Logtubed %d 标准队列深度：%d", i+1, d.QueueStdDepth)
+	}
+	if optESDisk {
+		if len(opts.ES.Endpoints) > 0 {
+			idx := rand.Intn(len(opts.ES.Endpoints))
+			measures = append(measures, &ESDiskMeasure{
+				name:          fmt.Sprintf("ES 磁盘"),
+				endpoint:      opts.ES.Endpoints[idx],
+				diskThreshold: opts.ES.DiskThreshold,
+				weights:       opts.ES.Weights,
+			})
 		}
 	}
 
-	// check es health
-	for i, url := range options.ESHealthEndpoints {
-		// fetch health
-		var h ESHealth
-		if err = common.GetJSON(url, &h); err != nil {
-			appendAlert("❌️ ES %d 无法连接: %s", i+1, err.Error())
-			continue
-		} else {
-			appendVerbose("✅ ES %d 连接成功", i+1)
-		}
-		// check number of nodes
-		if h.NumberOfNodes != len(options.ESHealthEndpoints) || h.Status == "red" {
-			appendAlert("❌️ ES %d 节点异常：%s(%d), %f%%", i+1, h.Status, h.NumberOfNodes, h.ActiveShardsPercentage)
-		} else {
-			appendVerbose("✅ ES %d 节点信息：%s(%d), %f%%", i+1, h.Status, h.NumberOfNodes, h.ActiveShardsPercentage)
-		}
-	}
+	buf := &bytes.Buffer{}
 
-	// check es allocation
-	if len(options.ESAllocEndpoint) > 0 {
-		var as []ESAlloc
-		if err = common.GetJSON(options.ESAllocEndpoint, &as); err != nil {
-			appendAlert("❌️ 无法查询 ES 磁盘信息：%s", err.Error())
-		} else {
-			appendVerbose("✅ ES 磁盘信息已获取，%+v", as)
-		}
-
-		for _, a := range as {
-			v, _ := strconv.Atoi(a.DiskPercent)
-			if v > 85 {
-				appendAlert("❌️ ES 磁盘即将用尽：%s = %s%%", a.Node, a.DiskPercent)
+	for _, m := range measures {
+		ret := &Results{}
+		name := m.Name()
+		m.Execute(ret)
+		for _, r := range ret.Results {
+			if r.OK {
+				fmt.Printf("%s %s: %s\n", EmojiPassing, name, r.Message)
 			} else {
-				appendVerbose("✅️ ES 磁盘状态：%s = %s%%", a.Node, a.DiskPercent)
+				fmt.Printf("%s %s: %s\n", EmojiFailed, name, r.Message)
+				_, _ = fmt.Fprintf(buf, "%s %s: %s\n", EmojiFailed, name, r.Message)
 			}
 		}
 	}
 
-	if len(content) > 0 {
-		_ = common.PostJSON(options.URL, M{"msgtype": "text", "text": M{"content": content}}, nil)
+	msg := buf.String()
+
+	if len(msg) == 0 {
+		return
 	}
+
+	_ = common.PostJSON(
+		fmt.Sprintf("https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=%s", opts.BotID),
+		M{"msgtype": "text", "text": M{"content": msg}},
+		nil,
+	)
 }

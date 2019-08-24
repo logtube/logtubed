@@ -29,6 +29,12 @@ type Options struct {
 		Name      string `yaml:"name" default:"$LOGTUBED_QUEUE_NAME|logtubed"`
 		SyncEvery int    `yaml:"sync_every" default:"$LOGTUBED_QUEUE_SYNC_EVERY|100"`
 	} `yaml:"queue"`
+	OutputSlowSQL struct {
+		Enabled   bool   `yaml:"enabled" default:"$OUTPUT_SLOW_SQL_ENABLED|false"`
+		URL       string `yaml:"url" default:"$OUTPUT_SLOW_SQL_URL|"`
+		Threshold int    `yaml:"threshold" default:"$OUTPUT_SLOW_SQL_THRESHOLD|3000"`
+		Topic     string `yaml:"topic" default:"$OUTPUT_SLOW_SQL_TOPIC|x-mybatis-track"`
+	} `yaml:"output_slow_sql"`
 	OutputES struct {
 		Enabled      bool     `yaml:"enabled" default:"$LOGTUBED_ES_ENABLED|false"`
 		URLs         []string `yaml:"urls" default:"$LOGTUBED_ES_URLS|[\"http://127.0.0.1:9200\"]"`
