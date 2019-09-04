@@ -7,7 +7,9 @@ import (
 	"go.guoyk.net/common"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
+	"time"
 )
 
 type M map[string]interface{}
@@ -86,6 +88,9 @@ func main() {
 		}
 	}
 	if optESDisk {
+		common.DefaultHTTPClient = &http.Client{
+			Timeout: time.Second * 30,
+		}
 		if len(opts.ES.Endpoints) > 0 {
 			idx := rand.Intn(len(opts.ES.Endpoints))
 			measures = append(measures, &ESDiskMeasure{
