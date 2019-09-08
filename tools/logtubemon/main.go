@@ -37,6 +37,7 @@ var (
 	optES       bool
 	optESDisk   bool
 	optLogtubed bool
+	optDrill    bool
 
 	opts Options
 
@@ -63,6 +64,7 @@ func main() {
 	flag.BoolVar(&optES, "es", false, "enable es check")
 	flag.BoolVar(&optESDisk, "es-disk", false, "enable es disk check")
 	flag.BoolVar(&optLogtubed, "logtubed", false, "enable logtubed check")
+	flag.BoolVar(&optDrill, "drill", false, "drill test")
 	flag.Parse()
 
 	if err = common.LoadYAMLConfigFile(optOptions, &opts); err != nil {
@@ -116,6 +118,10 @@ func main() {
 				_, _ = fmt.Fprintf(buf, "%s %s: %s\n", EmojiFailed, name, r.Message)
 			}
 		}
+	}
+
+	if optDrill {
+		_, _ = fmt.Fprintf(buf, "TEST")
 	}
 
 	msg := buf.String()
