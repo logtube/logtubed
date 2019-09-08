@@ -15,8 +15,8 @@ import (
 type M map[string]interface{}
 
 type Options struct {
-	BotID    string `yaml:"bot_id"`
-	Logtubed struct {
+	AlertDispatcher string `yaml:"alert_dispatcher"`
+	Logtubed        struct {
 		Endpoints      []string `yaml:"endpoints"`
 		QueueThreshold int64    `yaml:"queue_threshold"`
 	} `yaml:"logtubed"`
@@ -124,9 +124,5 @@ func main() {
 		return
 	}
 
-	_ = common.PostJSON(
-		fmt.Sprintf("https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=%s", opts.BotID),
-		M{"msgtype": "text", "text": M{"content": msg}},
-		nil,
-	)
+	_ = common.PostJSON(opts.AlertDispatcher, M{"message": msg, "source": "logtubemon"}, nil)
 }
