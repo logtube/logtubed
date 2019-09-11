@@ -52,7 +52,7 @@ func (r Event) ToMap() (out map[string]interface{}) {
 
 // Index index for record in ElasticSearch
 func (r Event) Index() string {
-	return fmt.Sprintf("%s-%s-%s-%04d-%02d-%02d", r.Topic, r.Env, r.Project, r.Timestamp.Year(), r.Timestamp.Month(), r.Timestamp.Day())
+	return fmt.Sprintf("%s-%s-%04d-%02d-%02d", r.Topic, r.Env, r.Timestamp.Year(), r.Timestamp.Month(), r.Timestamp.Day())
 }
 
 // ToOp convert record to operation
