@@ -24,3 +24,6 @@
 
 # dist
 /*dist*.tar.gz
+
+# binary
+/tools/logtubemon/logtubemon

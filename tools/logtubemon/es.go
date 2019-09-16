@@ -28,7 +28,7 @@ func (m *ESMeasure) Execute(ret *Results) {
 		ret.Failed("无法获取节点信息: %s", err.Error())
 		return
 	}
-	ok := h.NumberOfNodes == m.total && h.Status != "red"
+	ok := h.NumberOfNodes == m.total && (h.Status != "red" || h.ActiveShardsPercentage > 99)
 	ret.Add(ok, "%s, %f%%, 存活节点数 %d", h.Status, h.ActiveShardsPercentage, h.NumberOfNodes)
 	return
 }
