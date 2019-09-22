@@ -54,6 +54,25 @@ func Test_decodeV2BeatMessage(t *testing.T) {
 	}
 }
 
+func Test_decodeV2_1BeatMessage(t *testing.T) {
+	var r Event
+	if !decodeV2BeatMessage(`[2019-03-27 12:32:22.324 +0800] [{"c":"0123456780af","k":"hello,world","x":{"key1":"val1"}}] message body`, &r) {
+		t.Fatal("failed to decode plain")
+	}
+	if r.Crid != "0123456780af" {
+		t.Fatal("failed to decode plain crid")
+	}
+	if r.Keyword != "hello,world" {
+		t.Fatal("failed to decode keyword")
+	}
+	if r.Extra["key1"] != "val1" {
+		t.Fatal("failed to decode extra")
+	}
+	if r.Message != "message body" {
+		t.Fatal("failed to decode message")
+	}
+}
+
 func Test_decodeBeatSource(t *testing.T) {
 	var e Event
 	var ok bool

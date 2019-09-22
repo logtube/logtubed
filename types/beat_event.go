@@ -14,6 +14,7 @@ Examples:
 
 V1 Message: [2018/09/10 17:24:22.120] CRID[945bea8e42de2796] this is a message
 V2 Message: [2018-09-10 17:24:22.120 +0800] CRID[945bea8e42de2796] this is a message
+v2.1 Message: [2018-09-10 17:24:22.120 +0800] [{"c":"xxxxxxx"}] this is a message
 
 */
 
@@ -31,6 +32,13 @@ type BeatEvent struct {
 	Beat    BeatEventBeat `json:"beat"`    // contains hostname
 	Message string        `json:"message"` // contains timestamp, crid
 	Source  string        `json:"source"`  // contains env, topic, project
+}
+
+type PartialEvent struct {
+	Crid    string                 `json:"c"`
+	Message string                 `json:"m"`
+	Keyword string                 `json:"k"`
+	Extra   map[string]interface{} `json:"x"`
 }
 
 // ToEvent implements RecordConvertible
@@ -60,13 +68,6 @@ func (b BeatEvent) ToEvent(defaultTimeOffset int) (r Event, ok bool) {
 		}
 	}
 	return
-}
-
-type PartialEvent struct {
-	Crid    string                 `json:"c"`
-	Message string                 `json:"m"`
-	Keyword string                 `json:"k"`
-	Extra   map[string]interface{} `json:"x"`
 }
 
 func isV2Message(raw string) bool {
@@ -100,7 +101,7 @@ func decodeV2BeatMessage(raw string, r *Event) (ok bool) {
 	}
 
 	// remaining
-	buf := []byte(strings.TrimSpace(raw[31:]))
+	buf := bytes.TrimSpace([]byte(raw[31:]))
 
 	if bytes.HasPrefix(buf, []byte("{")) && bytes.HasSuffix(buf, []byte("}")) {
 		var p PartialEvent
@@ -111,6 +112,32 @@ func decodeV2BeatMessage(raw string, r *Event) (ok bool) {
 		r.Message = p.Message
 		r.Keyword = p.Keyword
 		r.Extra = p.Extra
+		ok = true
+		return
+	} else if bytes.HasPrefix(buf, []byte("[{")) {
+		var p PartialEvent
+		br := bytes.NewReader(buf)
+		dec := json.NewDecoder(br)
+		if _, err = dec.Token(); err != nil {
+			return
+		}
+		if !dec.More() {
+			return
+		}
+		if err = dec.Decode(&p); err != nil {
+			return
+		}
+		if _, err = dec.Token(); err != nil {
+			return
+		}
+		r.Crid = p.Crid
+		r.Keyword = p.Keyword
+		r.Extra = p.Extra
+		// buf is larger than any of the remaining bytes
+		// construct r.Message with buf as buffer to reduce memory usage
+		nj, _ := dec.Buffered().Read(buf) // rest of json decoder
+		nm, _ := br.Read(buf[nj:])        // rest of the message
+		r.Message = string(bytes.TrimSpace(buf[0 : nj+nm]))
 		ok = true
 		return
 	} else {
