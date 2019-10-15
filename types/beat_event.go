@@ -27,11 +27,18 @@ type BeatEventBeat struct {
 	Hostname string `json:"hostname"`
 }
 
+// BeatEventFileset fileset field in BeatEvent
+type BeatEventFileset struct {
+	Module string `json:"module"`
+	Name   string `json:"name"`
+}
+
 // BeatEvent a single event in redis sent by filebeat
 type BeatEvent struct {
-	Beat    BeatEventBeat `json:"beat"`    // contains hostname
-	Message string        `json:"message"` // contains timestamp, crid
-	Source  string        `json:"source"`  // contains env, topic, project
+	Beat    BeatEventBeat    `json:"beat"`    // contains hostname
+	Message string           `json:"message"` // contains timestamp, crid
+	Source  string           `json:"source"`  // contains env, topic, project
+	Fileset BeatEventFileset `json:"fileset"` // contains module, name
 }
 
 type PartialEvent struct {
@@ -43,6 +50,11 @@ type PartialEvent struct {
 
 // ToEvent implements RecordConvertible
 func (b BeatEvent) ToEvent(defaultTimeOffset int) (r Event, ok bool) {
+	// run through pipelines
+	var found bool
+	if found, ok = RunPipelines(b, &r); found {
+		return
+	}
 	// assign hostname
 	r.Hostname = b.Beat.Hostname
 	// decode source field
