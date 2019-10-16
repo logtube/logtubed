@@ -6,7 +6,7 @@ import (
 	"expvar"
 	"flag"
 	"fmt"
-	"github.com/logtube/logtubed/internal"
+	"github.com/logtube/logtubed/core"
 	"github.com/logtube/logtubed/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -44,27 +44,6 @@ func setupZerolog(verbose bool) {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: !verbose, TimeFormat: time.RFC3339})
 }
 
-// loadOptions load options from yaml file
-func loadOptions(filename string) (opt Options, err error) {
-	if err = common.LoadYAMLConfigFile(filename, &opt); err != nil {
-		if os.IsNotExist(err) {
-			if err = common.SetDefaults(&opt); err != nil {
-				return
-			}
-			log.Info().Str("filename", filename).Msg("config file not found, loading from defaults and envs")
-		} else {
-			return
-		}
-	}
-	if len(opt.Hostname) == 0 {
-		opt.Hostname, _ = os.Hostname()
-	}
-	if len(opt.Hostname) == 0 {
-		opt.Hostname = "localhost"
-	}
-	return
-}
-
 func main() {
 	var (
 		err error
@@ -73,19 +52,19 @@ func main() {
 		optVerbose bool
 		optCfgFile string
 
-		opts Options
+		opts types.Options
 
-		outputEsStd internal.ElasticOutput
-		outputEsPri internal.ElasticOutput
+		outputEsStd core.ElasticOutput
+		outputEsPri core.ElasticOutput
 
-		queueStd    internal.Queue
-		queuePri    internal.Queue
-		outputLocal internal.LocalOutput
+		queueStd    core.Queue
+		queuePri    core.Queue
+		outputLocal core.LocalOutput
 
 		dispatcher types.EventConsumer
 
-		inputRedis internal.RedisInput
-		inputSPTP  internal.SPTPInput
+		inputRedis core.RedisInput
+		inputSPTP  core.SPTPInput
 	)
 
 	defer exit(&err)
@@ -106,7 +85,7 @@ func main() {
 
 	// load options
 	log.Info().Str("file", optCfgFile).Msg("load options file")
-	if opts, err = loadOptions(optCfgFile); err != nil {
+	if opts, err = types.LoadOptions(optCfgFile); err != nil {
 		log.Error().Err(err).Msg("failed to load options file")
 		return
 	}
@@ -124,7 +103,7 @@ func main() {
 
 	// initialize elastic output, and associated queues
 	if opts.OutputES.Enabled {
-		if outputEsStd, err = internal.NewElasticOutput(internal.ElasticOutputOptions{
+		if outputEsStd, err = core.NewElasticOutput(core.ElasticOutputOptions{
 			Name:         "std",
 			URLs:         opts.OutputES.URLs,
 			Concurrency:  opts.OutputES.Concurrency,
@@ -134,7 +113,7 @@ func main() {
 			return
 		}
 
-		if queueStd, err = internal.NewQueue(internal.QueueOptions{
+		if queueStd, err = core.NewQueue(core.QueueOptions{
 			Dir:       opts.Queue.Dir,
 			Name:      opts.Queue.Name,
 			SyncEvery: opts.Queue.SyncEvery,
@@ -147,7 +126,7 @@ func main() {
 		}
 
 		if len(opts.Topics.Priors) > 0 {
-			if outputEsPri, err = internal.NewElasticOutput(internal.ElasticOutputOptions{
+			if outputEsPri, err = core.NewElasticOutput(core.ElasticOutputOptions{
 				Name:         "pri",
 				URLs:         opts.OutputES.URLs,
 				Concurrency:  opts.OutputES.Concurrency,
@@ -157,7 +136,7 @@ func main() {
 				return
 			}
 
-			if queuePri, err = internal.NewQueue(internal.QueueOptions{
+			if queuePri, err = core.NewQueue(core.QueueOptions{
 				Dir:       opts.Queue.Dir,
 				Name:      opts.Queue.Name + "-pri",
 				SyncEvery: opts.Queue.SyncEvery,
@@ -173,7 +152,7 @@ func main() {
 
 	// initialize local output
 	if opts.OutputLocal.Enabled {
-		if outputLocal, err = internal.NewLocalOutput(internal.LocalOutputOptions{
+		if outputLocal, err = core.NewLocalOutput(core.LocalOutputOptions{
 			Dir: opts.OutputLocal.Dir,
 		}); err != nil {
 			return
@@ -181,7 +160,7 @@ func main() {
 	}
 
 	// initialize dispatcher
-	dOpts := internal.DispatcherOptions{
+	dOpts := core.DispatcherOptions{
 		Ignores:  opts.Topics.Ignored,
 		Keywords: opts.Topics.KeywordRequired,
 		Priors:   opts.Topics.Priors,
@@ -191,17 +170,18 @@ func main() {
 		NextPri:  queuePri,
 	}
 
-	if dispatcher, err = internal.NewDispatcher(dOpts); err != nil {
+	if dispatcher, err = core.NewDispatcher(dOpts); err != nil {
 		return
 	}
 
 	// initialize Redis input
 	if opts.InputRedis.Enabled {
-		if inputRedis, err = internal.NewRedisInput(internal.RedisInputOptions{
-			Bind:       opts.InputRedis.Bind,
-			Multi:      opts.InputRedis.Multi,
-			TimeOffset: opts.InputRedis.TimeOffset,
-			Next:       dispatcher,
+		if inputRedis, err = core.NewRedisInput(core.RedisInputOptions{
+			Bind:                   opts.InputRedis.Bind,
+			Multi:                  opts.InputRedis.Multi,
+			LogtubeTimeOffset:      opts.InputRedis.Pipeline.Logtube.TimeOffset,
+			MySQLErrorIgnoreLevels: opts.InputRedis.Pipeline.MySQL.ErrorIgnoreLevels,
+			Next:                   dispatcher,
 		}); err != nil {
 			return
 		}
@@ -209,7 +189,7 @@ func main() {
 
 	// initialize SPTP input
 	if opts.InputSPTP.Enabled {
-		if inputSPTP, err = internal.NewSPTPInput(internal.SPTPInputOptions{
+		if inputSPTP, err = core.NewSPTPInput(core.SPTPInputOptions{
 			Bind: opts.InputSPTP.Bind,
 			Next: dispatcher,
 		}); err != nil {

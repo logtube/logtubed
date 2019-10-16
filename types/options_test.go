@@ -1,4 +1,4 @@
-package main
+package types
 
 import (
 	"os"
@@ -7,7 +7,7 @@ import (
 
 func TestLoadOptionsFile(t *testing.T) {
 	_ = os.Setenv("LOGTUBED_ES_CONCURRENCY", "9")
-	opt, err := loadOptions("contrib/logtubed.yml")
+	opt, err := LoadOptions("misc/logtubed.yml")
 	if err != nil {
 		t.Fatal(err)
 	}

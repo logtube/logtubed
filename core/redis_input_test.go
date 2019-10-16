@@ -1,4 +1,4 @@
-package internal
+package core
 
 import (
 	"context"
@@ -17,10 +17,10 @@ func TestRedisInput_Run(t *testing.T) {
 	eo := &testEventConsumer{data: make(chan types.Event, 5)}
 
 	if ri, err = NewRedisInput(RedisInputOptions{
-		Bind:       "127.0.0.1:4589",
-		Multi:      true,
-		TimeOffset: -2,
-		Next:       eo,
+		Bind:              "127.0.0.1:4589",
+		Multi:             true,
+		LogtubeTimeOffset: -2,
+		Next:              eo,
 	}); err != nil {
 		t.Fatal(err)
 	}

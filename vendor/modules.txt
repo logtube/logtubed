@@ -10,9 +10,9 @@ github.com/go-redis/redis/internal/proto
 github.com/go-redis/redis/internal/util
 # github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983
 github.com/mailru/easyjson
+github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
-github.com/mailru/easyjson/buffer
 # github.com/olivere/elastic v6.2.18+incompatible
 github.com/olivere/elastic
 github.com/olivere/elastic/config
@@ -23,11 +23,12 @@ github.com/pkg/errors
 github.com/pmezard/go-difflib/difflib
 # github.com/rs/zerolog v1.14.3
 github.com/rs/zerolog
-github.com/rs/zerolog/log
 github.com/rs/zerolog/internal/cbor
 github.com/rs/zerolog/internal/json
+github.com/rs/zerolog/log
 # github.com/stretchr/testify v1.3.0
 github.com/stretchr/testify/assert
+github.com/stretchr/testify/require
 # go.guoyk.net/byteflow v1.0.0
 go.guoyk.net/byteflow
 # go.guoyk.net/common v1.6.0

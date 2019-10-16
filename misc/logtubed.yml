@@ -7,7 +7,12 @@ input_redis:
   enabled: true
   bind: 0.0.0.0:6379
   multi: false
-  time_offset: -8
+  pipeline:
+    logtube:
+      time_offset: -8
+    mysql:
+      error_ignore_levels:
+        - note
 
 input_sptp:
   enabled: true

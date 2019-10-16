@@ -1,6 +1,7 @@
-package types
+package beat
 
 import (
+	"github.com/logtube/logtubed/types"
 	"testing"
 )
 
@@ -31,22 +32,22 @@ func Test_isV2Message(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isV2Message(tt.args.raw); got != tt.want {
-				t.Errorf("isV2Message() = %v, want %v", got, tt.want)
+			if got := isLogtubeV2Message(tt.args.raw); got != tt.want {
+				t.Errorf("isLogtubeV2Message() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
 func Test_decodeV2BeatMessage(t *testing.T) {
-	var r Event
-	if !decodeV2BeatMessage("[2019-03-27 12:32:22.324 +0800] CRID[0123456780af] KEYWORD[keyword1,keyword2] message body", &r) {
+	var r types.Event
+	if !decodeLogtubeV2BeatMessage("[2019-03-27 12:32:22.324 +0800] CRID[0123456780af] KEYWORD[keyword1,keyword2] message body", &r) {
 		t.Fatal("failed to decode plain")
 	}
 	if r.Crid != "0123456780af" {
 		t.Fatal("failed to decode plain crid")
 	}
-	if !decodeV2BeatMessage("[2019-03-27 12:32:22.324 +0800] {\"c\":\"0123456780af\", \"k\":\"keyword1,keyword2\", \"x\":{ \"duration\": 121 }}", &r) {
+	if !decodeLogtubeV2BeatMessage("[2019-03-27 12:32:22.324 +0800] {\"c\":\"0123456780af\", \"k\":\"keyword1,keyword2\", \"x\":{ \"duration\": 121 }}", &r) {
 		t.Fatal("failed to decode plain")
 	}
 	if r.Crid != "0123456780af" {
@@ -55,8 +56,8 @@ func Test_decodeV2BeatMessage(t *testing.T) {
 }
 
 func Test_decodeV2_1BeatMessage(t *testing.T) {
-	var r Event
-	if !decodeV2BeatMessage(`[2019-03-27 12:32:22.324 +0800] [{"c":"0123456780af","k":"hello,world","x":{"key1":"val1"}}] message body`, &r) {
+	var r types.Event
+	if !decodeLogtubeV2BeatMessage(`[2019-03-27 12:32:22.324 +0800] [{"c":"0123456780af","k":"hello,world","x":{"key1":"val1"}}] message body`, &r) {
 		t.Fatal("failed to decode plain")
 	}
 	if r.Crid != "0123456780af" {
@@ -74,10 +75,10 @@ func Test_decodeV2_1BeatMessage(t *testing.T) {
 }
 
 func Test_decodeBeatSource(t *testing.T) {
-	var e Event
+	var e types.Event
 	var ok bool
 
-	ok = decodeBeatSource("/home/tomcat/prod/x-redis-track/ms-order.20190022.log", &e)
+	ok = decodeLogtubeBeatSource("/home/tomcat/prod/x-redis-track/ms-order.20190022.log", &e)
 	if !ok {
 		t.Fatal("not ok")
 	}
@@ -91,7 +92,7 @@ func Test_decodeBeatSource(t *testing.T) {
 		t.Fatal("bad project")
 	}
 
-	ok = decodeBeatSource("/home/tomcat/prod/x-redis-track/test.x-mybatis-track.ms-order.20190022.log", &e)
+	ok = decodeLogtubeBeatSource("/home/tomcat/prod/x-redis-track/test.x-mybatis-track.ms-order.20190022.log", &e)
 	if !ok {
 		t.Fatal("not ok")
 	}
@@ -105,7 +106,7 @@ func Test_decodeBeatSource(t *testing.T) {
 		t.Fatal("bad project")
 	}
 
-	ok = decodeBeatSource("/home/tomcat/prod/x-redis-track/test.x-mybatis-track.ms-order.log", &e)
+	ok = decodeLogtubeBeatSource("/home/tomcat/prod/x-redis-track/test.x-mybatis-track.ms-order.log", &e)
 	if !ok {
 		t.Fatal("not ok")
 	}

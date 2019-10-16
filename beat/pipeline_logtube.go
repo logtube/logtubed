@@ -1,8 +1,9 @@
-package types
+package beat
 
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/logtube/logtubed/types"
 	"go.guoyk.net/byteflow"
 	"strings"
 	"time"
@@ -10,7 +11,7 @@ import (
 
 /*
 
-Examples:
+Pipeline Logtube:
 
 V1 Message: [2018/09/10 17:24:22.120] CRID[945bea8e42de2796] this is a message
 V2 Message: [2018-09-10 17:24:22.120 +0800] CRID[945bea8e42de2796] this is a message
@@ -19,70 +20,58 @@ v2.1 Message: [2018-09-10 17:24:22.120 +0800] [{"c":"xxxxxxx"}] this is a messag
 */
 
 const (
-	v2TimestampLayout = "2006-01-02 15:04:05.000 -0700"
+	LogtubeV2TimestampLayout = "2006-01-02 15:04:05.000 -0700"
 )
 
-// BeatEventBeat beat field in BeatEvent
-type BeatEventBeat struct {
-	Hostname string `json:"hostname"`
+type LogtubePipelineOptions struct {
+	DefaultTimeOffset int
 }
 
-// BeatEventFileset fileset field in BeatEvent
-type BeatEventFileset struct {
-	Module string `json:"module"`
-	Name   string `json:"name"`
+func NewLogtubePipeline(opts LogtubePipelineOptions) Pipeline {
+	return &logtubePipeline{opts: opts}
 }
 
-// BeatEvent a single event in redis sent by filebeat
-type BeatEvent struct {
-	Beat    BeatEventBeat    `json:"beat"`    // contains hostname
-	Message string           `json:"message"` // contains timestamp, crid
-	Source  string           `json:"source"`  // contains env, topic, project
-	Fileset BeatEventFileset `json:"fileset"` // contains module, name
+type logtubePipeline struct {
+	opts LogtubePipelineOptions
 }
 
-type PartialEvent struct {
-	Crid    string                 `json:"c"`
-	Message string                 `json:"m"`
-	Keyword string                 `json:"k"`
-	Extra   map[string]interface{} `json:"x"`
+func (l *logtubePipeline) Name() string {
+	return "logtube"
 }
 
-// ToEvent implements RecordConvertible
-func (b BeatEvent) ToEvent(defaultTimeOffset int) (r Event, ok bool) {
-	// run through pipelines
-	var found bool
-	if found, ok = RunPipelines(b, &r); found {
-		return
-	}
+func (l *logtubePipeline) Match(b Event) bool {
+	return true
+}
+
+func (l *logtubePipeline) Process(b Event, r *types.Event) (ok bool) {
 	// assign hostname
 	r.Hostname = b.Beat.Hostname
 	// decode source field
-	if ok = decodeBeatSource(b.Source, &r); !ok {
+	if ok = decodeLogtubeBeatSource(b.Source, r); !ok {
 		return
 	}
 	// trim message
 	b.Message = strings.TrimSpace(b.Message)
 	// detect v2 message
-	if isV2Message(b.Message) {
+	if isLogtubeV2Message(b.Message) {
 		// decode v2 message field
-		if ok = decodeV2BeatMessage(b.Message, &r); !ok {
+		if ok = decodeLogtubeV2BeatMessage(b.Message, r); !ok {
 			return
 		}
 	} else {
 		// decode v1 message field
 		var noOffset bool
-		if noOffset, ok = decodeV1BeatMessage(b.Message, strings.Contains(r.Topic, "_json_"), &r); !ok {
+		if noOffset, ok = decodeLogtubeV1Message(b.Message, strings.Contains(r.Topic, "_json_"), r); !ok {
 			return
 		}
 		if !noOffset {
-			r.Timestamp = r.Timestamp.Add(time.Hour * time.Duration(defaultTimeOffset))
+			r.Timestamp = r.Timestamp.Add(time.Hour * time.Duration(l.opts.DefaultTimeOffset))
 		}
 	}
 	return
 }
 
-func isV2Message(raw string) bool {
+func isLogtubeV2Message(raw string) bool {
 	if len(raw) < 31 {
 		return false
 	}
@@ -100,7 +89,7 @@ func isV2Message(raw string) bool {
 	return strings.HasSuffix(raw, "-") || strings.HasSuffix(raw, "+")
 }
 
-func decodeV2BeatMessage(raw string, r *Event) (ok bool) {
+func decodeLogtubeV2BeatMessage(raw string, r *types.Event) (ok bool) {
 	// check length
 	if len(raw) < 32 {
 		return
@@ -108,7 +97,7 @@ func decodeV2BeatMessage(raw string, r *Event) (ok bool) {
 
 	// decode timestamp
 	var err error
-	if r.Timestamp, err = time.Parse(v2TimestampLayout, raw[1:30]); err != nil {
+	if r.Timestamp, err = time.Parse(LogtubeV2TimestampLayout, raw[1:30]); err != nil {
 		return
 	}
 
@@ -172,7 +161,7 @@ func decodeV2BeatMessage(raw string, r *Event) (ok bool) {
 	return
 }
 
-func decodeV1BeatMessage(raw string, isJSON bool, r *Event) (noOffset bool, ok bool) {
+func decodeLogtubeV1Message(raw string, isJSON bool, r *types.Event) (noOffset bool, ok bool) {
 	var yyyy, MM, dd, hh, mm, ss, SSS int64
 	buf := []byte(raw)
 	if buf, _, ok = byteflow.Run(
@@ -207,15 +196,15 @@ func decodeV1BeatMessage(raw string, isJSON bool, r *Event) (noOffset bool, ok b
 			return
 		}
 		// topic must exist
-		if !decodeExtraStr(r.Extra, "topic", &r.Topic) {
+		if !decodeLogtubeExtraStr(r.Extra, "topic", &r.Topic) {
 			ok = false
 			return
 		}
 		// optional extra 'project', 'crid'
-		decodeExtraStr(r.Extra, "project", &r.Project)
-		decodeExtraStr(r.Extra, "crid", &r.Crid)
+		decodeLogtubeExtraStr(r.Extra, "project", &r.Project)
+		decodeLogtubeExtraStr(r.Extra, "crid", &r.Crid)
 		// optional extract 'timestamp'
-		if decodeExtraTime(r.Extra, "timestamp", &r.Timestamp) {
+		if decodeLogtubeExtraTime(r.Extra, "timestamp", &r.Timestamp) {
 			noOffset = true
 		}
 		// clear the message
@@ -238,7 +227,7 @@ func decodeV1BeatMessage(raw string, isJSON bool, r *Event) (noOffset bool, ok b
 	return
 }
 
-func decodeBeatSource(raw string, r *Event) bool {
+func decodeLogtubeBeatSource(raw string, r *types.Event) bool {
 	var cs []string
 	// split source with / separator, fxxk windows
 	cs = strings.Split(strings.TrimSpace(raw), "/")
@@ -266,7 +255,7 @@ func decodeBeatSource(raw string, r *Event) bool {
 	return true
 }
 
-func decodeExtraStr(m map[string]interface{}, key string, out *string) bool {
+func decodeLogtubeExtraStr(m map[string]interface{}, key string, out *string) bool {
 	if m == nil || out == nil {
 		return false
 	}
@@ -281,12 +270,12 @@ func decodeExtraStr(m map[string]interface{}, key string, out *string) bool {
 	return false
 }
 
-func decodeExtraTime(m map[string]interface{}, key string, out *time.Time) bool {
+func decodeLogtubeExtraTime(m map[string]interface{}, key string, out *time.Time) bool {
 	if m == nil || out == nil {
 		return false
 	}
 	var tsStr string
-	if decodeExtraStr(m, key, &tsStr) {
+	if decodeLogtubeExtraStr(m, key, &tsStr) {
 		if t, err := time.Parse(time.RFC3339, tsStr); err != nil {
 			return false
 		} else {

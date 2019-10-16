@@ -1,4 +1,10 @@
-package main
+package types
+
+import (
+	"github.com/rs/zerolog/log"
+	"go.guoyk.net/common"
+	"os"
+)
 
 // Options options for logtubed
 type Options struct {
@@ -10,10 +16,17 @@ type Options struct {
 		Mutex int    `yaml:"mutex" default:"$LOGTUBED_PPROF_MUTEX|0"`
 	} `yaml:"pprof"`
 	InputRedis struct {
-		Enabled    bool   `yaml:"enabled" default:"$LOGTUBED_REDIS_ENABLED|false"`
-		Bind       string `yaml:"bind" default:"$LOGTUBED_REDIS_BIND|0.0.0.0:6379"`
-		Multi      bool   `yaml:"multi" default:"$LOGTUBED_REDIS_MULTI|false"`
-		TimeOffset int    `yaml:"time_offset" default:"$LOGTUBED_REDIS_TIME_OFFSET|0"`
+		Enabled  bool   `yaml:"enabled" default:"$LOGTUBED_REDIS_ENABLED|false"`
+		Bind     string `yaml:"bind" default:"$LOGTUBED_REDIS_BIND|0.0.0.0:6379"`
+		Multi    bool   `yaml:"multi" default:"$LOGTUBED_REDIS_MULTI|false"`
+		Pipeline struct {
+			Logtube struct {
+				TimeOffset int `yaml:"time_offset" default:"$LOGTUBED_REDIS_TIME_OFFSET|0"`
+			} `yaml:"logtube"`
+			MySQL struct {
+				ErrorIgnoreLevels []string `yaml:"error_ignore_levels" default:"$LOGTUBE_REDIS_PIPELINE_MYSQL_ERROR_IGNORE_LEVELS|[]"`
+			} `yaml:"mysql"`
+		} `yaml:"pipeline"`
 	} `yaml:"input_redis"`
 	InputSPTP struct {
 		Enabled bool   `yaml:"enabled" default:"$LOGTUBED_SPTP_ENABLED|false"`
@@ -46,4 +59,25 @@ type Options struct {
 		Enabled bool   `yaml:"enabled" default:"$LOGTUBED_LOCAL_ENABLED|false"`
 		Dir     string `yaml:"dir" default:"$LOGTUBED_LOCAL_DIR|/var/log/logtubed"`
 	} `yaml:"output_local"`
+}
+
+// LoadOptions load options from yaml file
+func LoadOptions(filename string) (opt Options, err error) {
+	if err = common.LoadYAMLConfigFile(filename, &opt); err != nil {
+		if os.IsNotExist(err) {
+			if err = common.SetDefaults(&opt); err != nil {
+				return
+			}
+			log.Info().Str("filename", filename).Msg("config file not found, loading from defaults and envs")
+		} else {
+			return
+		}
+	}
+	if len(opt.Hostname) == 0 {
+		opt.Hostname, _ = os.Hostname()
+	}
+	if len(opt.Hostname) == 0 {
+		opt.Hostname = "localhost"
+	}
+	return
 }

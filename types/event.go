@@ -55,6 +55,10 @@ func (r Event) Index() string {
 	return fmt.Sprintf("%s-%s-%04d-%02d-%02d", r.Topic, r.Env, r.Timestamp.Year(), r.Timestamp.Month(), r.Timestamp.Day())
 }
 
+func (r Event) FullIndex() string {
+	return fmt.Sprintf("%s-%s-%s-%04d-%02d-%02d", r.Topic, r.Env, r.Project, r.Timestamp.Year(), r.Timestamp.Month(), r.Timestamp.Day())
+}
+
 // ToOp convert record to operation
 func (r Event) ToOp() (o Op) {
 	o.Index = r.Index()

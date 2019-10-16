@@ -1,9 +1,10 @@
-package internal
+package core
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/logtube/logtubed/beat"
 	"github.com/logtube/logtubed/types"
 	"github.com/rs/zerolog/log"
 	"go.guoyk.net/common"
@@ -14,10 +15,11 @@ import (
 )
 
 type RedisInputOptions struct {
-	Bind       string
-	Multi      bool
-	TimeOffset int
-	Next       types.EventConsumer
+	Bind                   string
+	Multi                  bool
+	LogtubeTimeOffset      int
+	MySQLErrorIgnoreLevels []string
+	Next                   types.EventConsumer
 }
 
 type RedisInput interface {
@@ -25,13 +27,14 @@ type RedisInput interface {
 }
 
 type redisInput struct {
-	optBind       string
-	optMulti      bool
-	optTimeOffset int
+	optBind  string
+	optMulti bool
 
 	connsCount    int64
 	connsSum      map[string]int
 	connsSumMutex sync.Locker
+
+	pipelines []beat.Pipeline
 
 	next types.EventConsumer
 }
@@ -45,12 +48,20 @@ func NewRedisInput(opts RedisInputOptions) (RedisInput, error) {
 	}
 	log.Info().Str("input", "redis").Interface("opts", opts).Msg("input created")
 	o := &redisInput{
-		optBind:       opts.Bind,
-		optMulti:      opts.Multi,
-		optTimeOffset: opts.TimeOffset,
+		optBind:  opts.Bind,
+		optMulti: opts.Multi,
 
 		connsSum:      map[string]int{},
 		connsSumMutex: &sync.Mutex{},
+
+		pipelines: []beat.Pipeline{
+			beat.NewMySQLPipeline(beat.MySQLPipelineOptions{
+				ErrorIgnoreLevels: opts.MySQLErrorIgnoreLevels,
+			}),
+			beat.NewLogtubePipeline(beat.LogtubePipelineOptions{
+				DefaultTimeOffset: opts.LogtubeTimeOffset,
+			}),
+		},
 
 		next: opts.Next,
 	}
@@ -81,6 +92,17 @@ func (r *redisInput) decreaseConnsSum(addr string) int {
 	return r.connsSum[i]
 }
 
+func (r *redisInput) runPipelines(b beat.Event, e *types.Event) (ok bool) {
+	for _, p := range r.pipelines {
+		if p.Match(b) {
+			log.Debug().Str("input", "redis").Str("pipeline", p.Name()).Msg("pipeline matched")
+			return p.Process(b, e)
+		}
+	}
+	log.Debug().Str("input", "redis").Msg("no pipeline matched")
+	return
+}
+
 func (r *redisInput) consumeRawEvent(raw []byte) {
 	// ignore event > 1mb
 	if len(raw) > 1000000 {
@@ -91,20 +113,21 @@ func (r *redisInput) consumeRawEvent(raw []byte) {
 		log.Warn().Int("raw-length", len(raw)).Msg("raw message larger than 500k")
 	}
 	log.Debug().Int("raw-length", len(raw)).Msg("raw message")
-	// unmarshal event
-	var event types.BeatEvent
-	if err := json.Unmarshal(raw, &event); err != nil {
-		log.Debug().Err(err).Str("event", string(raw)).Msg("failed to unmarshal event")
+	// unmarshal beat event
+	var be beat.Event
+	if err := json.Unmarshal(raw, &be); err != nil {
+		log.Debug().Err(err).Str("event", string(raw)).Msg("failed to unmarshal beat event")
 		return
 	}
-	// convert to record
-	if record, ok := event.ToEvent(r.optTimeOffset); ok {
-		log.Debug().Str("input", "redis").Interface("event", record).Msg("new event")
-		if err := r.next.ConsumeEvent(record); err != nil {
+	// convert to event
+	var e types.Event
+	if ok := r.runPipelines(be, &e); ok {
+		log.Debug().Str("input", "redis").Interface("event", e).Msg("new event")
+		if err := r.next.ConsumeEvent(e); err != nil {
 			log.Error().Err(err).Str("input", "redis").Msg("failed to delivery event to next")
 		}
 	} else {
-		log.Debug().Str("event", string(raw)).Msg("failed to convert record")
+		log.Debug().Str("event", string(raw)).Msg("pipeline not success")
 	}
 }
 

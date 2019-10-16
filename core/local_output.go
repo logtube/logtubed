@@ -1,4 +1,4 @@
-package internal
+package core
 
 import (
 	"context"
@@ -122,7 +122,7 @@ loop:
 		case e := <-l.ch:
 			var f *os.File
 			var err error
-			if f, err = l.takeFile(e.Index()); err != nil {
+			if f, err = l.takeFile(e.FullIndex()); err != nil {
 				log.Error().Err(err).Msg("LocalOutput: failed to take file")
 				continue
 			}
