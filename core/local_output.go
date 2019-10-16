@@ -53,10 +53,10 @@ func localOutputSerialize(e types.Event) string {
 		if len(x) > 0 {
 			x = x + ", "
 		}
-		x = x + fmt.Sprintf("%s = %s", k, v)
+		x = x + fmt.Sprintf("%s = %v", k, v)
 	}
 	if len(x) > 0 {
-		x = " " + x
+		x = " {" + x + "}"
 	}
 	return fmt.Sprintf(
 		"[%s] (%s) [%s] %s%s\r\n",

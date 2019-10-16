@@ -59,5 +59,5 @@ func TestLocalOutput_Run(t *testing.T) {
 	if !assert.NoError(t, err, "should not fail on reading output file") {
 		return
 	}
-	assert.Equal(t, "[2019-07-16T11:59:53+08:00] (aaaa) [kkkk] hello world key1 = val2\r\n", string(buf))
+	assert.Equal(t, "[2019-07-16T11:59:53+08:00] (aaaa) [kkkk] hello world {key1 = val2}\r\n", string(buf))
 }
