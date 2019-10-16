@@ -56,16 +56,16 @@ func (m *mySQLErrorPipeline) Process(b Event, r *types.Event) bool {
 		"file": b.Source,
 	}
 	if b.Fileset.Name == "error" {
-		return decodeMySQLError(b, r)
+		return m.decodeMySQLError(b, r)
 	} else {
 		return false
 	}
 }
 
-func decodeMySQLError(b Event, r *types.Event) bool {
+func (m *mySQLErrorPipeline) decodeMySQLError(b Event, r *types.Event) bool {
 	r.Topic = "x-mysql-error"
-	m := strings.TrimSpace(b.Message)
-	subs := MySQLErrorFormat.FindStringSubmatch(m)
+	b.Message = strings.TrimSpace(b.Message)
+	subs := MySQLErrorFormat.FindStringSubmatch(b.Message)
 	if len(subs) == 0 {
 		return false
 	}
@@ -74,8 +74,14 @@ func decodeMySQLError(b Event, r *types.Event) bool {
 		log.Debug().Err(err).Msg("failed to parse time")
 		return false
 	}
+	level := strings.TrimSpace(strings.ToLower(subs[3]))
+	for _, l := range m.opts.ErrorIgnoreLevels {
+		if l == level {
+			return false
+		}
+	}
 	r.Extra["thread_id"], _ = strconv.Atoi(subs[2])
-	r.Extra["level"] = strings.ToLower(subs[3])
+	r.Extra["level"] = level
 	r.Message = subs[4]
 	return true
 }
