@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	MySQLErrorFormat = regexp.MustCompile(`(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{6}.+)\s+(?P<thread_id>\d+)\s+\[(?P<level>\w+)]\s+(?P<message>.+)`)
+	MySQLErrorFormat = regexp.MustCompile(`^(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{6}.+)\s+(?P<thread_id>\d+)\s+\[(?P<level>\w+)]\s+(?P<message>.+)`)
 )
 
 type MySQLPipelineOptions struct {
