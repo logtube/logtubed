@@ -27,7 +27,7 @@ topics:
     - error
 
 queue:
-  dir: /var/lib/logtube
+  dir: /var/lib/logtubed
   name: logtube
   sync_every: 1000
 
