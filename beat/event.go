@@ -4,7 +4,7 @@ package beat
 type Event struct {
 	Beat struct {
 		Hostname string `json:"hostname"`
-	} `json:"beat"` // contains hostname
+	} `json:"beat"`                 // contains hostname
 	Message string `json:"message"` // contains timestamp, crid
 	Source  string `json:"source"`  // contains env, topic, project
 	Fileset struct {
