@@ -135,7 +135,7 @@ func (e *elasticOutput) Run(ctx context.Context) error {
 			// create batch if not existed
 			if bs == nil {
 				bs = elastic.NewBulkService(e.c)
-				bs.Retrier(elastic.NewBackoffRetrier(elastic.NewExponentialBackoff(time.Second*5, time.Second*300)))
+				bs.Retrier(elastic.NewBackoffRetrier(elastic.NewExponentialBackoff(time.Second*5, time.Hour*24)))
 			}
 			// add batch operation
 			bs.Add(elastic.NewBulkIndexRequest().Index(op.Index).Type("_doc").Doc(string(op.Body)))
