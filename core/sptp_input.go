@@ -85,7 +85,10 @@ func (s *sptpInput) Run(ctx context.Context) error {
 		}
 		log.Debug().Str("input", "SPTP").Interface("event", ce).Msg("new event")
 
-		if err = s.next.ConsumeEvent(ce.ToEvent()); err != nil {
+		e := ce.ToEvent()
+		e.RawSize = len(buf)
+
+		if err = s.next.ConsumeEvent(e); err != nil {
 			log.Error().Err(err).Str("input", "SPTP").Msg("failed to delivery event")
 		}
 	}

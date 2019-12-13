@@ -121,6 +121,7 @@ func (r *redisInput) consumeRawEvent(raw []byte) {
 	}
 	// convert to event
 	var e types.Event
+	e.RawSize = len(be.Message)
 	if ok := r.runPipelines(be, &e); ok {
 		log.Debug().Str("input", "redis").Interface("event", e).Msg("new event")
 		if err := r.next.ConsumeEvent(e); err != nil {

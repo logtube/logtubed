@@ -26,7 +26,7 @@ func TestCompactEvent_ToEvent(t *testing.T) {
 		{
 			name:   "case-1",
 			fields: fields{1000, "a", "b", "c", "d", "e", "f", "g", map[string]interface{}{"h": "i"}},
-			wantE:  Event{time.Unix(1, 0), "a", "b", "c", "d", "e", "f", "g", "", map[string]interface{}{"h": "i"}},
+			wantE:  Event{time.Unix(1, 0), "a", "b", "c", "d", "e", "f", "g", "", 71, map[string]interface{}{"h": "i"}},
 		},
 	}
 	for _, tt := range tests {

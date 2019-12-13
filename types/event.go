@@ -17,6 +17,7 @@ type Event struct {
 	Message   string                 `json:"message,omitempty"` // the actual log message body
 	Keyword   string                 `json:"keyword"`           // comma separated keywords
 	Via       string                 `json:"via"`               // logtubed hostname
+	RawSize   int                    `json:"raw_size"`          // size of the raw event
 	Extra     map[string]interface{} `json:"extra,omitempty"`   // extra structured data
 }
 
@@ -41,6 +42,7 @@ func (r Event) ToMap() (out map[string]interface{}) {
 	out["topic"] = r.Topic
 	out["crid"] = r.Crid
 	out["via"] = r.Via
+	out["raw_size"] = r.RawSize
 	if len(r.Keyword) > 0 {
 		out["keyword"] = r.Keyword
 	}
