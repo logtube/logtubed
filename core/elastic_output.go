@@ -20,8 +20,33 @@ func (c *elasticCommitter) Run(ctx context.Context) error {
 	for {
 		select {
 		case bs := <-c.bch:
-			if _, err := bs.Do(ctx); err != nil {
+			var err error
+			var res *elastic.BulkResponse
+			var retryCount int
+		retry:
+			if res, err = bs.Do(ctx); err != nil {
+				// connection error, already retried
 				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Err(err).Msg("bulk failed to commit")
+			} else if res.Errors {
+				// bulk error
+				// calculate failed count
+				failedCount := len(res.Failed())
+				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Str("reason", "bulk failed").Int("failed_count", failedCount).Msg("bulk failed to commit")
+				// if more than half of the actions failed, means the system is down
+				if failedCount*2 > bs.NumberOfActions() {
+					// increase retryCount
+					retryCount++
+					// sleep exponential time
+					retryTimer := time.NewTimer(2 * time.Second * time.Duration(retryCount) * time.Duration(retryCount))
+					select {
+					case <-retryTimer.C:
+						// retry
+						goto retry
+					case <-ctx.Done():
+						// or exit on context cancelled
+						return nil
+					}
+				}
 			} else {
 				log.Debug().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Int("count", bs.NumberOfActions()).Msg("bulk committed")
 			}
