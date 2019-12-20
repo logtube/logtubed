@@ -9,8 +9,8 @@ require (
 	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/google/go-cmp v0.3.0 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983 // indirect
-	github.com/olivere/elastic v6.2.18+incompatible
+	github.com/mailru/easyjson v0.7.0 // indirect
+	github.com/olivere/elastic v6.2.26+incompatible
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/pkg/errors v0.8.1

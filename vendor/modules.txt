@@ -8,12 +8,12 @@ github.com/go-redis/redis/internal/hashtag
 github.com/go-redis/redis/internal/pool
 github.com/go-redis/redis/internal/proto
 github.com/go-redis/redis/internal/util
-# github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983
+# github.com/mailru/easyjson v0.7.0
 github.com/mailru/easyjson
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
-# github.com/olivere/elastic v6.2.18+incompatible
+# github.com/olivere/elastic v6.2.26+incompatible
 github.com/olivere/elastic
 github.com/olivere/elastic/config
 github.com/olivere/elastic/uritemplates

@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/olivere/elastic"
 	"log"
+	"net/url"
 	"strings"
+	"time"
 )
 
 const (
@@ -21,13 +25,22 @@ type ESIndex struct {
 	FullMerged bool
 }
 
+type ESRecovery struct {
+	Index        string `json:"index"`
+	Shard        string `json:"shard"`
+	BytesPercent string `json:"bytes_percent"`
+}
+
 type ES struct {
 	Client *elastic.Client
 }
 
 func NewES(url string) (es *ES, err error) {
 	var client *elastic.Client
-	if client, err = elastic.NewClient(elastic.SetURL(url)); err != nil {
+	if client, err = elastic.NewClient(
+		elastic.SetURL(url),
+		elastic.SetRetrier(elastic.NewBackoffRetrier(elastic.NewExponentialBackoff(time.Second, time.Second*3600))),
+	); err != nil {
 		return
 	}
 	es = &ES{Client: client}
@@ -178,4 +191,42 @@ func (es *ES) DeleteIndex(index string) error {
 	log.Printf("es: delete index: %s", index)
 	_, err := es.Client.DeleteIndex(index).Do(context.Background())
 	return err
+}
+
+func (es *ES) WaitClusterRecovery() (err error) {
+	var count int
+wait:
+	if count, err = es.GetClusterRecoveryCount(); err != nil {
+		return
+	}
+	if count > 0 {
+		time.Sleep(time.Second * 10)
+		goto wait
+	}
+	return
+}
+
+func (es *ES) GetClusterRecoveryCount() (count int, err error) {
+	params := url.Values{}
+	params.Set("format", "json")
+	params.Set("active_only", "true")
+	var res *elastic.Response
+	if res, err = es.Client.PerformRequest(context.Background(), elastic.PerformRequestOptions{
+		Method: "GET",
+		Path:   "/_cat/recovery",
+		Params: params,
+	}); err != nil {
+		return
+	}
+	if res.StatusCode >= 300 {
+		err = fmt.Errorf("es: failed to retrieve /_cat/recovery: %d", res.StatusCode)
+		return
+	}
+	var rs []ESRecovery
+	if err = json.Unmarshal(res.Body, &rs); err != nil {
+		return
+	}
+	log.Printf("es: cluster recoveries in progress: %v", rs)
+	count = len(rs)
+	return
 }

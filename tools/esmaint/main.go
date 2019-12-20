@@ -25,6 +25,7 @@ var (
 	optWarm     bool
 	optMove     bool
 	optCold     bool
+	optReopen   bool
 
 	conf Conf
 )
@@ -52,6 +53,7 @@ func main() {
 	flag.BoolVar(&optMove, "move", false, "执行 移动 步骤")
 	flag.BoolVar(&optCold, "cold", false, "执行 冷区 步骤")
 	flag.BoolVar(&optDelete, "delete", false, "执行 删除 步骤")
+	flag.BoolVar(&optReopen, "reopen", false, "执行重新打开索引步骤，并等待调度恢复")
 	flag.Parse()
 
 	// load conf
@@ -95,7 +97,7 @@ func main() {
 		}
 	}
 
-	if !(optWarm || optMove || optCold || optDelete) {
+	if !(optWarm || optMove || optCold || optDelete || optReopen) {
 		return
 	}
 
@@ -189,6 +191,23 @@ func main() {
 				}
 			}
 		}
+
+		// reopen
+		if optReopen && (!index.Open) {
+			log.Printf("esmaint: reopen :%s", index.Index)
+			if !optDry {
+				if err = es.OpenIndex(index.Index); err != nil {
+					return
+				}
+				if err = es.WaitClusterRecovery(); err != nil {
+					return
+				}
+				if err = es.CloseIndex(index.Index); err != nil {
+					return
+				}
+			}
+		}
+
 		// cold
 		if optCold {
 			if day > rule.Cold && index.Open {
