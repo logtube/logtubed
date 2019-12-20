@@ -199,6 +199,7 @@ func main() {
 				if err = es.OpenIndex(index.Index); err != nil {
 					return
 				}
+				time.Sleep(time.Second * 3)
 				if err = es.WaitClusterRecovery(); err != nil {
 					return
 				}
