@@ -176,14 +176,14 @@ func main() {
 		// move
 		if optMove {
 			if day > rule.Move {
-				countMove++
-				if !optDry {
-					var isHDD bool
-					if isHDD, err = es.IsIndexRoutingToHDD(index.Index); err != nil {
-						return
-					}
-					if !isHDD {
-						log.Printf("esmiant: move index to hdd: %s", index.Index)
+				var isHDD bool
+				if isHDD, err = es.IsIndexRoutingToHDD(index.Index); err != nil {
+					return
+				}
+				if !isHDD {
+					countMove++
+					log.Printf("esmiant: move index to hdd: %s", index.Index)
+					if !optDry {
 						if err = es.SetIndexRoutingToHDD(index.Index); err != nil {
 							return
 						}
