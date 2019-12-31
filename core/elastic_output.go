@@ -26,14 +26,22 @@ func (c *elasticCommitter) Run(ctx context.Context) error {
 		retry:
 			if res, err = bs.Do(ctx); err != nil {
 				// connection error, already retried
-				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Err(err).Msg("bulk failed to commit")
+				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Int("total_count", bs.NumberOfActions()).Int("retried", retryCount).Err(err).Msg("bulk failed to commit")
 			} else if res.Errors {
 				// bulk error
 				// calculate failed count
-				failedCount := len(res.Failed())
-				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Str("reason", "bulk failed").Int("failed_count", failedCount).Msg("bulk failed to commit")
+				failed := res.Failed()
+				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Str("reason", "bulk failed").Int("failed_count", len(failed)).Int("total_count", bs.NumberOfActions()).Int("retried", retryCount).Msg("bulk failed to commit")
+				// sample errors
+				sampled := failed
+				if len(sampled) > 5 {
+					sampled = sampled[0:5]
+				}
+				for _, s := range sampled {
+					log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Interface("sample", s).Msg("bulk failed sampled")
+				}
 				// if more than half of the actions failed, means the system is down
-				if failedCount*2 > bs.NumberOfActions() {
+				if len(failed)*2 > bs.NumberOfActions() {
 					// increase retryCount
 					retryCount++
 					// sleep exponential time
