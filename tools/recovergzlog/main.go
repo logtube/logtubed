@@ -7,33 +7,20 @@ import (
 	"flag"
 	"github.com/go-redis/redis"
 	"github.com/logtube/logtubed/tools/recovergzlog/iocount"
+	"github.com/logtube/logtubed/tools/recovergzlog/logline"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
-	"sync/atomic"
 )
 
 var (
 	optDebug bool
 	optRedis string
 
-	linePattern = regexp.MustCompile(`^\[\d\d\d\d[/\-]\d\d[/\-]\d\d \d\d:\d\d:\d\d`)
 	hostname, _ = os.Hostname()
 )
-
-type countReader struct {
-	r io.Reader
-	c int64
-}
-
-func (c *countReader) Read(p []byte) (n int, err error) {
-	n, err = c.r.Read(p)
-	atomic.AddInt64(&c.c, int64(n))
-	return
-}
 
 type M map[string]interface{}
 
@@ -94,42 +81,46 @@ func handleFile(filename string, client *redis.Client) (err error) {
 	defer gr.Close()
 
 	cr2 := iocount.NewReader(gr)
+	br := bufio.NewReader(cr2)
 
-	s := bufio.NewScanner(cr2)
-	s.Split(bufio.ScanLines)
-
-	var message string
 	var count int64
-	for s.Scan() {
+	cp := logline.NewComposer()
+
+	for {
+		// progress
 		if count%100000 == 0 || optDebug {
+			log.Printf("line: %d", count)
 			log.Printf("uncompressed: %s", iocount.SimpleFormatByteSize(cr2.Count()))
 			log.Printf("compressed: %s", iocount.SimpleFormatByteSize(cr1.Count()))
 		}
-		line := s.Text()
-		if linePattern.MatchString(line) {
-			if len(message) != 0 {
-				if err = submit(filename, message, client); err != nil {
-					return
-				}
+		// read line
+		line, err := br.ReadString('\n')
+		// feed line
+		if message := cp.Feed(line); len(message) > 0 {
+			if err = handleMessage(filename, message, client); err != nil {
+				return
 			}
-			message = line
-		} else {
-			message = message + "\n" + line
 		}
+		// break on error
+		if err != nil {
+			if err == io.EOF {
+				err = nil
+			}
+			break
+		}
+		// increase counter
 		count++
 	}
-	if len(message) > 0 {
-		if err = submit(filename, message, client); err != nil {
+	// remaining message
+	if message := cp.End(); len(message) > 0 {
+		if err = handleMessage(filename, message, client); err != nil {
 			return
 		}
-	}
-	if err = s.Err(); err != nil {
-		return
 	}
 	return
 }
 
-func submit(filename string, message string, client *redis.Client) (err error) {
+func handleMessage(filename string, message string, client *redis.Client) (err error) {
 	m := M{
 		"beat": M{
 			"hostname": hostname,
