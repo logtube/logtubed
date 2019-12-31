@@ -94,7 +94,8 @@ func handleFile(filename string, client *redis.Client) (err error) {
 			log.Printf("compressed: %s", iocount.SimpleFormatByteSize(cr1.Count()))
 		}
 		// read line
-		line, err := br.ReadString('\n')
+		var line string
+		line, err = br.ReadString('\n')
 		// feed line
 		if message := cp.Feed(line); len(message) > 0 {
 			if err = handleMessage(filename, message, client); err != nil {
