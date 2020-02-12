@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 type RedisInputOptions struct {
@@ -190,6 +191,7 @@ func (r *redisInput) handleCommand(conn redcon.Conn, cmd redcon.Command) {
 func (r *redisInput) handleConnect(conn redcon.Conn) bool {
 	if r.blocked {
 		log.Error().Str("reason", "blocked").Str("addr", conn.RemoteAddr()).Msg("connection refused")
+		time.Sleep(time.Second)
 		return false
 	}
 	log.Info().Int64(
