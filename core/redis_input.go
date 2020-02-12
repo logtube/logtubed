@@ -188,6 +188,10 @@ func (r *redisInput) handleCommand(conn redcon.Conn, cmd redcon.Command) {
 }
 
 func (r *redisInput) handleConnect(conn redcon.Conn) bool {
+	if r.blocked {
+		log.Error().Str("reason", "blocked").Str("addr", conn.RemoteAddr()).Msg("connection refused")
+		return false
+	}
 	log.Info().Int64(
 		"conns",
 		r.increaseConnsCount(),
