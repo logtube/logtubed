@@ -41,6 +41,7 @@ type Options struct {
 		Dir       string `yaml:"dir" default:"$LOGTUBED_QUEUE_DIR|/var/lib/logtubed"`
 		Name      string `yaml:"name" default:"$LOGTUBED_QUEUE_NAME|logtubed"`
 		SyncEvery int    `yaml:"sync_every" default:"$LOGTUBED_QUEUE_SYNC_EVERY|100"`
+		Watermark int    `yaml:"watermark" default:"$LOGTUBED_QUEUE_WATERMARK|90"`
 	} `yaml:"queue"`
 	OutputSlowSQL struct {
 		Enabled   bool   `yaml:"enabled" default:"$OUTPUT_SLOW_SQL_ENABLED|false"`
@@ -56,8 +57,9 @@ type Options struct {
 		BatchTimeout int      `yaml:"batch_timeout" default:"$LOGTUBED_ES_BATCH_TIMEOUT|3"`
 	} `yaml:"output_es"`
 	OutputLocal struct {
-		Enabled bool   `yaml:"enabled" default:"$LOGTUBED_LOCAL_ENABLED|false"`
-		Dir     string `yaml:"dir" default:"$LOGTUBED_LOCAL_DIR|/var/log/logtubed"`
+		Enabled   bool   `yaml:"enabled" default:"$LOGTUBED_LOCAL_ENABLED|false"`
+		Dir       string `yaml:"dir" default:"$LOGTUBED_LOCAL_DIR|/var/log/logtubed"`
+		Watermark int    `yaml:"watermark" default:"$LOGTUBED_LOCAL_WATERMARK|90"`
 	} `yaml:"output_local"`
 }
 

@@ -13,15 +13,15 @@ github.com/mailru/easyjson
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
-# github.com/olivere/elastic v6.2.26+incompatible
+# github.com/olivere/elastic v6.2.27+incompatible
 github.com/olivere/elastic
 github.com/olivere/elastic/config
 github.com/olivere/elastic/uritemplates
-# github.com/pkg/errors v0.8.1
+# github.com/pkg/errors v0.9.1
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
-# github.com/rs/zerolog v1.14.3
+# github.com/rs/zerolog v1.18.0
 github.com/rs/zerolog
 github.com/rs/zerolog/internal/cbor
 github.com/rs/zerolog/internal/json
@@ -31,7 +31,7 @@ github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
 # go.guoyk.net/byteflow v1.0.0
 go.guoyk.net/byteflow
-# go.guoyk.net/common v1.6.0
+# go.guoyk.net/common v1.8.0
 go.guoyk.net/common
 # go.guoyk.net/diskqueue v1.0.1
 go.guoyk.net/diskqueue
@@ -39,5 +39,5 @@ go.guoyk.net/diskqueue
 go.guoyk.net/redcon
 # go.guoyk.net/sptp v1.0.0
 go.guoyk.net/sptp
-# gopkg.in/yaml.v2 v2.2.2
+# gopkg.in/yaml.v2 v2.2.8
 gopkg.in/yaml.v2

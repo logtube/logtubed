@@ -24,6 +24,7 @@ type RedisInputOptions struct {
 
 type RedisInput interface {
 	common.Runnable
+	SetBlocked(blocked bool)
 }
 
 type redisInput struct {
@@ -37,6 +38,8 @@ type redisInput struct {
 	pipelines []beat.Pipeline
 
 	next types.EventConsumer
+
+	blocked bool
 }
 
 func NewRedisInput(opts RedisInputOptions) (RedisInput, error) {
@@ -66,6 +69,10 @@ func NewRedisInput(opts RedisInputOptions) (RedisInput, error) {
 		next: opts.Next,
 	}
 	return o, nil
+}
+
+func (r *redisInput) SetBlocked(blocked bool) {
+	r.blocked = blocked
 }
 
 func (r *redisInput) increaseConnsCount() int64 {
@@ -160,6 +167,11 @@ func (r *redisInput) handleCommand(conn redcon.Conn, cmd redcon.Command) {
 			conn.WriteString("redis_version:2.3\r\n")
 		}
 	case "rpush", "lpush":
+		// refuse on blocked
+		if r.blocked {
+			conn.WriteError("ERR blocked")
+			return
+		}
 		// at least 3 arguments, RPUSH xlog "{....}"
 		if len(cmd.Args) < 3 {
 			conn.WriteError("ERR bad command '" + command + "'")

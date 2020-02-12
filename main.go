@@ -65,6 +65,9 @@ func main() {
 
 		inputRedis core.RedisInput
 		inputSPTP  core.SPTPInput
+
+		brOpts core.BlockRoutineOptions
+		br     core.BlockRoutine
 	)
 
 	defer exit(&err)
@@ -148,6 +151,9 @@ func main() {
 				return
 			}
 		}
+
+		brOpts.Dirs = append(brOpts.Dirs, opts.Queue.Dir)
+		brOpts.Watermarks = append(brOpts.Watermarks, opts.Queue.Watermark)
 	}
 
 	// initialize local output
@@ -157,6 +163,9 @@ func main() {
 		}); err != nil {
 			return
 		}
+
+		brOpts.Dirs = append(brOpts.Dirs, opts.OutputLocal.Dir)
+		brOpts.Watermarks = append(brOpts.Watermarks, opts.OutputLocal.Watermark)
 	}
 
 	// initialize dispatcher
@@ -185,6 +194,8 @@ func main() {
 		}); err != nil {
 			return
 		}
+
+		brOpts.Blockables = append(brOpts.Blockables, inputRedis)
 	}
 
 	// initialize SPTP input
@@ -196,6 +207,9 @@ func main() {
 			return
 		}
 	}
+
+	// block routine
+	br = core.NewBlockRoutine(brOpts)
 
 	// contexts
 	ctxL3, cancelL3 := context.WithCancel(context.Background())
@@ -222,7 +236,7 @@ func main() {
 		log.Info().Msg("no inputs, running in drain mode")
 	}
 	log.Info().Msg("L1 ignite")
-	common.RunAsync(ctxL1, cancelL1, doneL1, inputSPTP, inputRedis, common.DummyRunnable)
+	common.RunAsync(ctxL1, cancelL1, doneL1, inputSPTP, inputRedis, br)
 	time.Sleep(time.Millisecond * 100)
 
 	// ignite pprof / expvar

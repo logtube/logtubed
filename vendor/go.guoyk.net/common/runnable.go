@@ -57,7 +57,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, _rs ...Runnable) error 
 }
 
 func RunAsync(ctx context.Context, cancel context.CancelFunc, done chan error, rs ...Runnable) {
-	go func() {
-		done <- Run(ctx, cancel, rs...)
-	}()
+	if done == nil {
+		go Run(ctx, cancel, rs...)
+	} else {
+		go func() { done <- Run(ctx, cancel, rs...) }()
+	}
 }
