@@ -10,28 +10,36 @@ import (
 )
 
 type elasticCommitter struct {
-	name string
-	idx  int
-	bch  chan *elastic.BulkService
+	name   string
+	idx    int
+	client *elastic.Client
+	opCh   chan []types.Op
 }
 
 func (c *elasticCommitter) Run(ctx context.Context) error {
 	log.Info().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Msg("committer started")
 	for {
 		select {
-		case bs := <-c.bch:
+		case ops := <-c.opCh:
 			var err error
 			var res *elastic.BulkResponse
 			var retryCount int
 		retry:
+			// create bulk service
+			bs := elastic.NewBulkService(c.client)
+			bs.Retrier(elastic.NewBackoffRetrier(elastic.NewExponentialBackoff(time.Second*5, time.Hour*24)))
+			for _, op := range ops {
+				bs.Add(elastic.NewBulkIndexRequest().Index(op.Index).Type("_doc").Doc(string(op.Body)))
+			}
+			// execute bulk
 			if res, err = bs.Do(ctx); err != nil {
 				// connection error, already retried
-				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Int("total_count", bs.NumberOfActions()).Int("retried", retryCount).Err(err).Msg("bulk failed to commit")
+				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Int("total_count", len(ops)).Int("retried", retryCount).Err(err).Msg("bulk failed to commit")
 			} else if res.Errors {
 				// bulk error
 				// calculate failed count
 				failed := res.Failed()
-				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Str("reason", "bulk failed").Int("failed_count", len(failed)).Int("total_count", bs.NumberOfActions()).Int("retried", retryCount).Msg("bulk failed to commit")
+				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Str("reason", "bulk failed").Int("failed_count", len(failed)).Int("total_count", len(ops)).Int("retried", retryCount).Msg("bulk failed to commit")
 				// sample errors
 				sampled := failed
 				if len(sampled) > 5 {
@@ -41,7 +49,7 @@ func (c *elasticCommitter) Run(ctx context.Context) error {
 					log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Interface("sample", s).Msg("bulk failed sampled")
 				}
 				// if more than half of the actions failed, means the system is down
-				if len(failed)*2 > bs.NumberOfActions() {
+				if len(failed)*2 > len(ops) {
 					// increase retryCount
 					retryCount++
 					// sleep exponential time
@@ -56,7 +64,7 @@ func (c *elasticCommitter) Run(ctx context.Context) error {
 					}
 				}
 			} else {
-				log.Debug().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Int("count", bs.NumberOfActions()).Msg("bulk committed")
+				log.Debug().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Int("count", len(ops)).Msg("bulk committed")
 			}
 		case <-ctx.Done():
 			log.Info().Int("idx", c.idx).Str("name", c.name).Msg("committer exited")
@@ -130,13 +138,13 @@ func (e *elasticOutput) Run(ctx context.Context) error {
 	log.Info().Str("output", "elastic").Str("name", e.optName).Msg("started")
 	defer log.Info().Str("output", "elastic").Str("name", e.optName).Msg("stopped")
 
-	// bulk service channel
-	bch := make(chan *elastic.BulkService)
+	// bulk channel
+	opCh := make(chan []types.Op)
 
 	// create committer
 	cs := make([]common.Runnable, 0, e.optConcurrency)
 	for i := 0; i < e.optConcurrency; i++ {
-		cs = append(cs, &elasticCommitter{idx: i + 1, bch: bch, name: e.optName})
+		cs = append(cs, &elasticCommitter{idx: i + 1, opCh: opCh, client: e.c, name: e.optName})
 	}
 
 	// wait committer done on exit
@@ -150,30 +158,26 @@ func (e *elasticOutput) Run(ctx context.Context) error {
 	t := time.NewTicker(e.optBatchTimeout)
 	defer t.Stop()
 
-	// bulk service
-	var bs *elastic.BulkService
+	// bulk
+	var ops []types.Op
 
+	// submit func
 	submit := func() {
 		// execute batch if not empty
-		if bs != nil && bs.NumberOfActions() > 0 {
-			log.Debug().Str("output", "elastic").Str("name", e.optName).Interface("actions", bs.NumberOfActions()).Msg("bulk submitted")
-			bch <- bs
-			bs = nil
+		if len(ops) > 0 {
+			log.Debug().Str("output", "elastic").Str("name", e.optName).Interface("actions", len(ops)).Msg("bulk submitted")
+			opCh <- ops
+			ops = nil
 		}
 	}
 
 	for {
 		select {
 		case op := <-e.och:
-			// create batch if not existed
-			if bs == nil {
-				bs = elastic.NewBulkService(e.c)
-				bs.Retrier(elastic.NewBackoffRetrier(elastic.NewExponentialBackoff(time.Second*5, time.Hour*24)))
-			}
-			// add batch operation
-			bs.Add(elastic.NewBulkIndexRequest().Index(op.Index).Type("_doc").Doc(string(op.Body)))
-			// execute batch if batch size exceeded
-			if bs.NumberOfActions() >= e.optBatchSize {
+			// append op
+			ops = append(ops, op)
+			// submit bulk
+			if len(ops) >= e.optBatchSize {
 				submit()
 			}
 		case <-t.C:
