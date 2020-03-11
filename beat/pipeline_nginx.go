@@ -32,7 +32,7 @@ var (
 		"s":   compactkv.IntegerType,
 		"urt": compactkv.FloatType,
 	}
-	ngxUnderSecondVars = map[string]bool{
+	ngxVarsUnderSecond = map[string]bool{
 		"request_time":           true,
 		"upstream_response_time": true,
 	}
@@ -93,7 +93,7 @@ func (n *ngxPipeline) Process(b Event, r *types.Event) (success bool) {
 	// decode compact kv
 	m := nginxCompactKV.Parse(b.Message[rb+1:])
 	for k, v := range m {
-		if ngxUnderSecondVars[k] {
+		if ngxVarsUnderSecond[k] {
 			// translate float seconds to integer milliseconds
 			if vFloat, ok := v.(float64); ok {
 				r.Extra[k] = int64(vFloat * 1000)
