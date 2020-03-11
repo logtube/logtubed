@@ -5,14 +5,22 @@ import (
 	"github.com/logtube/logtubed/types"
 	"github.com/stretchr/testify/require"
 	"log"
+	"sort"
 	"strings"
 	"testing"
 )
 
 func TestNginxPipeline_Format(t *testing.T) {
+	var tags []string
 	var items []string
-	for tag, name := range ngxTagNames {
-		items = append(items, fmt.Sprintf("%s=$%s", tag, name))
+	for tag := range ngxTagNames {
+		tags = append(tags, tag)
+	}
+
+	sort.Strings(tags)
+
+	for _, tag := range tags {
+		items = append(items, fmt.Sprintf("%s=$%s", tag, ngxTagNames[tag]))
 	}
 
 	sb := &strings.Builder{}
