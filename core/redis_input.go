@@ -65,6 +65,7 @@ func NewRedisInput(opts RedisInputOptions) (RedisInput, error) {
 			beat.NewLogtubePipeline(beat.LogtubePipelineOptions{
 				DefaultTimeOffset: opts.LogtubeTimeOffset,
 			}),
+			beat.NewNginxPipeline(beat.NginxPipelineOptions{}),
 		},
 
 		next: opts.Next,
