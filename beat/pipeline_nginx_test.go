@@ -25,7 +25,7 @@ func TestNginxPipeline_Format(t *testing.T) {
 
 	sb := &strings.Builder{}
 	sb.WriteString("\nlog_format  compactkv '[$time_iso8601] ")
-	sb.WriteString(strings.Join(items, "|"))
+	sb.WriteString(strings.Join(items, " | "))
 	sb.WriteString(`';`)
 	t.Log(sb.String())
 }
