@@ -26,6 +26,8 @@ var (
 		"s":    "status",
 		"ua":   "upstream_addr",
 		"urt":  "upstream_response_time",
+		"p":    "project",
+		"e":    "env",
 	}
 	ngxTagTypes = map[string]compactkv.ValueType{
 		"bbs": compactkv.IntegerType,
@@ -38,6 +40,8 @@ var (
 		"upstream_response_time": true,
 	}
 	ngxVarRequest = "request"
+	ngxVarProject = "project"
+	ngxVarEnv     = "env"
 )
 
 var (
@@ -111,6 +115,10 @@ func (n *ngxPipeline) Process(b Event, r *types.Event) (success bool) {
 					r.Extra["protocol"] = splits[2]
 				}
 			}
+		} else if k == ngxVarProject {
+			r.Project, _ = v.(string)
+		} else if k == ngxVarEnv {
+			r.Env, _ = v.(string)
 		} else {
 			r.Extra[k] = v
 		}
