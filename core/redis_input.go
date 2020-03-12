@@ -62,10 +62,10 @@ func NewRedisInput(opts RedisInputOptions) (RedisInput, error) {
 			beat.NewMySQLPipeline(beat.MySQLPipelineOptions{
 				ErrorIgnoreLevels: opts.MySQLErrorIgnoreLevels,
 			}),
+			beat.NewNginxPipeline(beat.NginxPipelineOptions{}),
 			beat.NewLogtubePipeline(beat.LogtubePipelineOptions{
 				DefaultTimeOffset: opts.LogtubeTimeOffset,
 			}),
-			beat.NewNginxPipeline(beat.NginxPipelineOptions{}),
 		},
 
 		next: opts.Next,
