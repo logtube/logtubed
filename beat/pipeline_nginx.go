@@ -3,6 +3,7 @@ package beat
 import (
 	"github.com/logtube/logtubed/pkg/compactkv"
 	"github.com/logtube/logtubed/types"
+	"github.com/rs/zerolog/log"
 	"strings"
 	"time"
 )
@@ -64,7 +65,7 @@ func (n *ngxPipeline) Name() string {
 }
 
 func (n *ngxPipeline) Match(b Event) bool {
-	return b.Fileset.Module == "nginx"
+	return b.Fileset.Module == "nginx" && b.Fileset.Name == "access"
 }
 
 func (n *ngxPipeline) Process(b Event, r *types.Event) (success bool) {
@@ -81,12 +82,14 @@ func (n *ngxPipeline) Process(b Event, r *types.Event) (success bool) {
 	lb := strings.Index(b.Message, "[")
 	rb := strings.Index(b.Message, "]")
 	if lb < 0 || rb < 0 || lb > rb {
+		log.Debug().Int("lb", lb).Int("rb", rb).Msg("nginx_pipeline: invalid bucket location")
 		return
 	}
 
 	// decode $time_iso8601
 	var err error
 	if r.Timestamp, err = time.Parse(ngxFormatISO8601, b.Message[lb+1:rb]); err != nil {
+		log.Debug().Err(err).Msg("nginx_pipeline: bad timestamp")
 		return
 	}
 
