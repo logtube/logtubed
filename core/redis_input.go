@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,10 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+)
+
+var (
+	SuffixCompactEvent = []byte(".compact")
 )
 
 type RedisInputOptions struct {
@@ -112,7 +117,31 @@ func (r *redisInput) runPipelines(b beat.Event, e *types.Event) (ok bool) {
 	return
 }
 
-func (r *redisInput) consumeRawEvent(raw []byte) {
+func (r *redisInput) consumeCompactEvent(raw []byte) {
+	// ignore event > 1mb
+	if len(raw) > 1000000 {
+		return
+	}
+	// warn event > 500k
+	if len(raw) > 500000 {
+		log.Warn().Int("raw-length", len(raw)).Msg("raw message larger than 500k")
+	}
+	log.Debug().Int("raw-length", len(raw)).Msg("raw message")
+	var ce types.CompactEvent
+	var err error
+	if ce, err = types.UnmarshalCompactEventJSON(raw); err != nil {
+		log.Debug().Err(err).Str("event", string(raw)).Msg("failed to unmarshal compact event")
+		return
+	}
+	e := ce.ToEvent()
+	e.RawSize = len(raw)
+	log.Debug().Str("input", "redis").Interface("event", e).Msg("new event")
+	if err = r.next.ConsumeEvent(e); err != nil {
+		log.Error().Err(err).Str("input", "redis").Msg("failed to delivery event to next")
+	}
+}
+
+func (r *redisInput) consumeBeatEvent(raw []byte) {
 	// ignore event > 1mb
 	if len(raw) > 1000000 {
 		return
@@ -130,7 +159,7 @@ func (r *redisInput) consumeRawEvent(raw []byte) {
 	}
 	// convert to event
 	var e types.Event
-	e.RawSize = len(be.Message)
+	e.RawSize = len(raw)
 	if ok := r.runPipelines(be, &e); ok {
 		log.Debug().Str("input", "redis").Interface("event", e).Msg("new event")
 		if err := r.next.ConsumeEvent(e); err != nil {
@@ -180,8 +209,14 @@ func (r *redisInput) handleCommand(conn redcon.Conn, cmd redcon.Command) {
 			return
 		}
 		// retrieve all events
-		for _, raw := range cmd.Args[2:] {
-			r.consumeRawEvent(raw)
+		if bytes.HasSuffix(cmd.Args[1], SuffixCompactEvent) {
+			for _, raw := range cmd.Args[2:] {
+				r.consumeCompactEvent(raw)
+			}
+		} else {
+			for _, raw := range cmd.Args[2:] {
+				r.consumeBeatEvent(raw)
+			}
 		}
 		conn.WriteInt64(0)
 	case "llen":
