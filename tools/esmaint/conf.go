@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -68,9 +69,16 @@ func (c Conf) ShouldSkip(index string) bool {
 }
 
 func (c Conf) FindRule(index string) (Rule, bool) {
-	for prefix, rule := range c.Rules {
+	// 倒序排列前缀，让更长的前缀规则更早匹配
+	var prefixes []string
+	for prefix := range c.Rules {
+		prefixes = append(prefixes, prefix)
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(prefixes)))
+
+	for _, prefix := range prefixes {
 		if strings.HasPrefix(index, prefix) {
-			return rule, true
+			return c.Rules[prefix], true
 		}
 	}
 	return Rule{}, false
