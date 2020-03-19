@@ -48,6 +48,17 @@ func (c *elasticCommitter) Run(ctx context.Context) error {
 				for _, s := range sampled {
 					log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Interface("sample", s).Msg("bulk failed sampled")
 				}
+				// 忽略 closed 错误不进行重试
+				isClosed := true
+				for _, sample := range sampled {
+					if sample.Error.Reason != "closed" {
+						isClosed = false
+						break
+					}
+				}
+				if isClosed {
+					continue
+				}
 				// if more than half of the actions failed, means the system is down
 				if len(failed)*2 > len(ops) {
 					// increase retryCount
