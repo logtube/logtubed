@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+var (
+	elasticIgnoredErrorReasons = []string{"closed"}
+)
+
 type elasticCommitter struct {
 	name   string
 	idx    int
@@ -36,43 +40,48 @@ func (c *elasticCommitter) Run(ctx context.Context) error {
 				// connection error, already retried
 				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Int("total_count", len(ops)).Int("retried", retryCount).Err(err).Msg("bulk failed to commit")
 			} else if res.Errors {
-				// bulk error
-				// calculate failed count
+				// filter out failed
 				failed := res.Failed()
 				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Str("reason", "bulk failed").Int("failed_count", len(failed)).Int("total_count", len(ops)).Int("retried", retryCount).Msg("bulk failed to commit")
 				// sample errors
-				sampled := failed
-				if len(sampled) > 5 {
-					sampled = sampled[0:5]
-				}
-				for _, s := range sampled {
+				for i, s := range failed {
 					log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Interface("sample", s).Msg("bulk failed sampled")
-				}
-				// 忽略 closed 错误不进行重试
-				isClosed := true
-				for _, sample := range sampled {
-					if sample.Error.Reason != "closed" {
-						isClosed = false
+					if i > 5 {
 						break
 					}
 				}
-				if isClosed {
+				// filter out op indexes should be retried
+				var shouldRetries []int64
+			outerLoop:
+				for _, item := range failed {
+					for _, reason := range elasticIgnoredErrorReasons {
+						if item.Error.Reason == reason {
+							continue outerLoop
+						}
+					}
+					if item.SeqNo >= 0 && item.SeqNo < int64(len(ops)) {
+						shouldRetries = append(shouldRetries, item.SeqNo)
+					}
+				}
+				// continue if no retries needed
+				if len(shouldRetries) == 0 {
 					continue
 				}
-				// if more than half of the actions failed, means the system is down
-				if len(failed)*2 > len(ops) {
-					// increase retryCount
-					retryCount++
-					// sleep exponential time
-					retryTimer := time.NewTimer(2 * time.Second * time.Duration(retryCount) * time.Duration(retryCount))
-					select {
-					case <-retryTimer.C:
-						// retry
-						goto retry
-					case <-ctx.Done():
-						// or exit on context cancelled
-						return nil
-					}
+				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Int("should-retries", len(shouldRetries)).Msg("bulk should retries")
+				// rebuild ops
+				newOps := make([]types.Op, 0, len(shouldRetries))
+				for _, seqNo := range shouldRetries {
+					newOps = append(newOps, ops[seqNo])
+				}
+				ops = newOps
+				// retry
+				retryCount++
+				retryTimer := time.NewTimer(time.Second * 5)
+				select {
+				case <-retryTimer.C:
+					goto retry
+				case <-ctx.Done():
+					return nil
 				}
 			} else {
 				log.Debug().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Int("count", len(ops)).Msg("bulk committed")
