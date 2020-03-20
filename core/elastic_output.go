@@ -63,11 +63,11 @@ func (c *elasticCommitter) Run(ctx context.Context) error {
 						shouldRetries = append(shouldRetries, item.SeqNo)
 					}
 				}
+				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Int("should-retries", len(shouldRetries)).Msg("bulk should retries")
 				// continue if no retries needed
 				if len(shouldRetries) == 0 {
 					continue
 				}
-				log.Error().Int("idx", c.idx).Str("name", c.name).Str("output", "elastic").Int("should-retries", len(shouldRetries)).Msg("bulk should retries")
 				// rebuild ops
 				newOps := make([]types.Op, 0, len(shouldRetries))
 				for _, seqNo := range shouldRetries {
