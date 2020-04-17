@@ -5,6 +5,7 @@ import (
 	"github.com/logtube/logtubed/types"
 	"github.com/rs/zerolog/log"
 	"go.guoyk.net/common"
+	"strings"
 )
 
 type DispatcherOptions struct {
@@ -61,15 +62,31 @@ func NewDispatcher(opts DispatcherOptions) (types.EventConsumer, error) {
 	return d, nil
 }
 
-func (d *dispatcher) ConsumeEvent(e types.Event) error {
-	// assign via
-	e.Via = d.Hostname
+func (d *dispatcher) shouldDropEvent(e types.Event) bool {
 	// check ignores
 	if d.tIgn[e.Topic] {
-		return nil
+		return true
 	}
 	// check keyword required
 	if d.tKey[e.Topic] && len(e.Keyword) == 0 {
+		return true
+	}
+	// check HEAD /
+	if e.Topic == "x-access" && e.Extra != nil {
+		path, _ := e.Extra["path"].(string)
+		method, _ := e.Extra["method"].(string)
+		if path == "/" && strings.ToLower(method) == "head" {
+			return true
+		}
+	}
+	return false
+}
+
+func (d *dispatcher) ConsumeEvent(e types.Event) error {
+	// assign via
+	e.Via = d.Hostname
+	// check drop
+	if d.shouldDropEvent(e) {
 		return nil
 	}
 	eg := common.NewErrorGroup()
