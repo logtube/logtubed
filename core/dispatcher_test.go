@@ -23,13 +23,13 @@ func TestDispatcher_ConsumeEvent(t *testing.T) {
 	var d types.EventConsumer
 	var err error
 	d, err = NewDispatcher(DispatcherOptions{
-		Ignores:  []string{"ignore"},
-		Keywords: []string{"keyword", "prior"},
-		Priors:   []string{"prior"},
-		Hostname: "test-host",
-		Next:     nxt,
-		NextStd:  std,
-		NextPri:  pri,
+		TopicIgnores:         []string{"ignore"},
+		TopicRequireKeywords: []string{"keyword", "prior"},
+		Priors:               []string{"prior"},
+		Hostname:             "test-host",
+		Next:                 nxt,
+		NextStd:              std,
+		NextPri:              pri,
 	})
 
 	assert.NoError(t, err, "should not failed to create dispatcher")

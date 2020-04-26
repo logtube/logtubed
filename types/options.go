@@ -32,6 +32,9 @@ type Options struct {
 		Enabled bool   `yaml:"enabled" default:"$LOGTUBED_SPTP_ENABLED|false"`
 		Bind    string `yaml:"bind" default:"$LOGTUBED_SPTP_BIND|0.0.0.0:9921"`
 	} `yaml:"input_sptp"`
+	Keywords struct {
+		Ingnored []string `yaml:"ignored" default:"$LOGTUBED_KEYWORDS_IGNORED|[]"`
+	} `yaml:"keywords"`
 	Topics struct {
 		KeywordRequired []string `yaml:"keyword_required" default:"$LOGTUBED_TOPICS_KEYWORD_REQUIRED|[]"`
 		Ignored         []string `yaml:"ignored" default:"$LOGTUBED_TOPICS_IGNORED|[]"`

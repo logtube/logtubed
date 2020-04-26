@@ -9,9 +9,10 @@ import (
 )
 
 type DispatcherOptions struct {
-	Ignores  []string
-	Keywords []string
-	Priors   []string
+	TopicIgnores         []string
+	TopicRequireKeywords []string
+	KeywordIgnores       []string
+	Priors               []string
 
 	Hostname string
 
@@ -26,6 +27,7 @@ type dispatcher struct {
 	tIgn map[string]bool
 	tKey map[string]bool
 	tPri map[string]bool
+	kIgn map[string]bool
 
 	next    types.EventConsumer
 	nextStd types.OpConsumer
@@ -45,19 +47,23 @@ func NewDispatcher(opts DispatcherOptions) (types.EventConsumer, error) {
 		Hostname: opts.Hostname,
 		tIgn:     make(map[string]bool),
 		tKey:     make(map[string]bool),
+		kIgn:     make(map[string]bool),
 		tPri:     make(map[string]bool),
 		nextStd:  opts.NextStd,
 		nextPri:  opts.NextPri,
 		next:     opts.Next,
 	}
-	for _, t := range opts.Ignores {
+	for _, t := range opts.TopicIgnores {
 		d.tIgn[t] = true
 	}
-	for _, t := range opts.Keywords {
+	for _, t := range opts.TopicRequireKeywords {
 		d.tKey[t] = true
 	}
 	for _, t := range opts.Priors {
 		d.tPri[t] = true
+	}
+	for _, k := range opts.KeywordIgnores {
+		d.kIgn[k] = true
 	}
 	return d, nil
 }
@@ -69,6 +75,10 @@ func (d *dispatcher) shouldDropEvent(e types.Event) bool {
 	}
 	// check keyword required
 	if d.tKey[e.Topic] && len(e.Keyword) == 0 {
+		return true
+	}
+	// check keyword ignored
+	if d.kIgn[e.Keyword] {
 		return true
 	}
 	// check HEAD /

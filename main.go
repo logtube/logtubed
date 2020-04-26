@@ -170,13 +170,14 @@ func main() {
 
 	// initialize dispatcher
 	dOpts := core.DispatcherOptions{
-		Ignores:  opts.Topics.Ignored,
-		Keywords: opts.Topics.KeywordRequired,
-		Priors:   opts.Topics.Priors,
-		Hostname: opts.Hostname,
-		Next:     outputLocal,
-		NextStd:  queueStd,
-		NextPri:  queuePri,
+		TopicIgnores:         opts.Topics.Ignored,
+		TopicRequireKeywords: opts.Topics.KeywordRequired,
+		KeywordIgnores:       opts.Keywords.Ingnored,
+		Priors:               opts.Topics.Priors,
+		Hostname:             opts.Hostname,
+		Next:                 outputLocal,
+		NextStd:              queueStd,
+		NextPri:              queuePri,
 	}
 
 	if dispatcher, err = core.NewDispatcher(dOpts); err != nil {
