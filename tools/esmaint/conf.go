@@ -16,7 +16,7 @@ type Rule struct {
 }
 
 func ParseRule(s string) (rule Rule, err error) {
-	splits := strings.Split(s, ":")
+	splits := strings.Split(s, ",")
 	if len(splits) != 4 {
 		err = errors.New("Rule 格式错误")
 		return
