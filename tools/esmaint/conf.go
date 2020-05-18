@@ -87,7 +87,7 @@ func (c Conf) Validate() error {
 func (c Conf) ShouldSkip(index string) bool {
 	// skip blacklist
 	for _, pfx := range c.Blacklist {
-		if strings.HasPrefix(index, pfx) {
+		if strings.Contains(index, pfx) {
 			return true
 		}
 	}
