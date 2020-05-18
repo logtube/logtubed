@@ -118,6 +118,7 @@ func main() {
 	for _, index := range indices {
 		// skip system indices and blacklist
 		if conf.ShouldSkip(index.Index) {
+			log.Printf("esmaint: skip %s", index.Index)
 			continue
 		}
 
