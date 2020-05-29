@@ -110,6 +110,7 @@ func decodeLogtubeV2BeatMessage(raw string, r *types.Event) (ok bool) {
 			return
 		}
 		r.Crid = p.Crid
+		r.Crsrc = p.Crsrc
 		r.Message = p.Message
 		r.Keyword = p.Keyword
 		r.Extra = p.Extra
@@ -132,6 +133,7 @@ func decodeLogtubeV2BeatMessage(raw string, r *types.Event) (ok bool) {
 			return
 		}
 		r.Crid = p.Crid
+		r.Crsrc = p.Crsrc
 		r.Keyword = p.Keyword
 		r.Extra = p.Extra
 		// buf is larger than any of the remaining bytes

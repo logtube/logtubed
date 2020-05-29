@@ -15,6 +15,7 @@ type Event struct {
 
 type PartialEvent struct {
 	Crid    string                 `json:"c"`
+	Crsrc   string                 `json:"s"`
 	Message string                 `json:"m"`
 	Keyword string                 `json:"k"`
 	Extra   map[string]interface{} `json:"x"`

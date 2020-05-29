@@ -14,6 +14,7 @@ type Event struct {
 	Project   string                 `json:"project"`           // project name
 	Topic     string                 `json:"topic"`             // topic of log, for example 'access', 'err'
 	Crid      string                 `json:"crid"`              // correlation id
+	Crsrc     string                 `json:"crsrc"`             // correlation source
 	Message   string                 `json:"message,omitempty"` // the actual log message body
 	Keyword   string                 `json:"keyword"`           // comma separated keywords
 	Via       string                 `json:"via"`               // logtubed hostname
@@ -41,6 +42,7 @@ func (r Event) ToMap() (out map[string]interface{}) {
 	out["project"] = r.Project
 	out["topic"] = r.Topic
 	out["crid"] = r.Crid
+	out["crsrc"] = r.Crsrc
 	out["via"] = r.Via
 	out["raw_size"] = r.RawSize
 	if len(r.Keyword) > 0 {

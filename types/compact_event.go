@@ -17,6 +17,7 @@ type CompactEvent struct {
 	Project   string                 `json:"p"`           // project name
 	Topic     string                 `json:"o"`           // topic of log, for example 'access', 'err'
 	Crid      string                 `json:"c"`           // correlation id
+	Crsrc     string                 `json:"s"`           // correlation source
 	Message   string                 `json:"m,omitempty"` // the actual log message body
 	Keyword   string                 `json:"k"`           // comma separated keywords
 	Extra     map[string]interface{} `json:"x,omitempty"` // extra structured data
@@ -43,6 +44,7 @@ func (c CompactEvent) ToEvent() (e Event) {
 	e.Project = c.Project
 	e.Topic = c.Topic
 	e.Crid = c.Crid
+	e.Crsrc = c.Crsrc
 	e.Message = c.Message
 	e.Keyword = c.Keyword
 	e.Extra = c.Extra
