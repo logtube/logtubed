@@ -107,11 +107,12 @@ func main() {
 	// initialize elastic output, and associated queues
 	if opts.OutputES.Enabled {
 		if outputEsStd, err = core.NewElasticOutput(core.ElasticOutputOptions{
-			Name:         "std",
-			URLs:         opts.OutputES.URLs,
-			Concurrency:  opts.OutputES.Concurrency,
-			BatchSize:    opts.OutputES.BatchSize,
-			BatchTimeout: time.Duration(opts.OutputES.BatchTimeout) * time.Second,
+			Name:           "std",
+			URLs:           opts.OutputES.URLs,
+			Concurrency:    opts.OutputES.Concurrency,
+			BatchSize:      opts.OutputES.BatchSize,
+			BatchTimeout:   time.Duration(opts.OutputES.BatchTimeout) * time.Second,
+			NoMappingTypes: opts.OutputES.NoMappingTypes,
 		}); err != nil {
 			return
 		}

@@ -14,10 +14,11 @@ var (
 )
 
 type elasticCommitter struct {
-	name   string
-	idx    int
-	client *elastic.Client
-	opCh   chan []types.Op
+	name           string
+	idx            int
+	noMappingTypes bool
+	client         *elastic.Client
+	opCh           chan []types.Op
 }
 
 func (c *elasticCommitter) Run(ctx context.Context) error {
@@ -33,7 +34,11 @@ func (c *elasticCommitter) Run(ctx context.Context) error {
 			bs := elastic.NewBulkService(c.client)
 			bs.Retrier(elastic.NewBackoffRetrier(elastic.NewExponentialBackoff(time.Second*5, time.Hour*24)))
 			for _, op := range ops {
-				bs.Add(elastic.NewBulkIndexRequest().Index(op.Index).Type("_doc").Doc(string(op.Body)))
+				if c.noMappingTypes {
+					bs.Add(elastic.NewBulkIndexRequest().Index(op.Index).Doc(string(op.Body)))
+				} else {
+					bs.Add(elastic.NewBulkIndexRequest().Index(op.Index).Type("_doc").Doc(string(op.Body)))
+				}
 			}
 			// execute bulk
 			if res, err = bs.Do(ctx); err != nil {
@@ -94,11 +99,12 @@ func (c *elasticCommitter) Run(ctx context.Context) error {
 }
 
 type ElasticOutputOptions struct {
-	Name         string
-	URLs         []string
-	Concurrency  int
-	BatchSize    int
-	BatchTimeout time.Duration
+	Name           string
+	URLs           []string
+	Concurrency    int
+	BatchSize      int
+	BatchTimeout   time.Duration
+	NoMappingTypes bool
 }
 
 type ElasticOutput interface {
@@ -108,10 +114,11 @@ type ElasticOutput interface {
 
 // ElasticOutput implements OpConsumer and Runnable
 type elasticOutput struct {
-	optName         string
-	optConcurrency  int
-	optBatchSize    int
-	optBatchTimeout time.Duration
+	optName           string
+	optConcurrency    int
+	optBatchSize      int
+	optBatchTimeout   time.Duration
+	optNoMappingTypes bool
 
 	och chan types.Op
 
@@ -138,12 +145,13 @@ func NewElasticOutput(opts ElasticOutputOptions) (ElasticOutput, error) {
 		return nil, err
 	}
 	eo := &elasticOutput{
-		optName:         opts.Name,
-		optConcurrency:  opts.Concurrency,
-		optBatchSize:    opts.BatchSize,
-		optBatchTimeout: opts.BatchTimeout,
-		och:             make(chan types.Op),
-		c:               c,
+		optName:           opts.Name,
+		optConcurrency:    opts.Concurrency,
+		optBatchSize:      opts.BatchSize,
+		optBatchTimeout:   opts.BatchTimeout,
+		optNoMappingTypes: opts.NoMappingTypes,
+		och:               make(chan types.Op),
+		c:                 c,
 	}
 	log.Info().Str("output", "elastic").Str("name", eo.optName).Interface("opts", opts).Msg("output created")
 	return eo, nil
@@ -164,7 +172,7 @@ func (e *elasticOutput) Run(ctx context.Context) error {
 	// create committer
 	cs := make([]common.Runnable, 0, e.optConcurrency)
 	for i := 0; i < e.optConcurrency; i++ {
-		cs = append(cs, &elasticCommitter{idx: i + 1, opCh: opCh, client: e.c, name: e.optName})
+		cs = append(cs, &elasticCommitter{idx: i + 1, opCh: opCh, client: e.c, name: e.optName, noMappingTypes: e.optNoMappingTypes})
 	}
 
 	// wait committer done on exit
