@@ -3,8 +3,8 @@ package beat
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/logtube/logtubed/types"
 	"github.com/guoyk93/byteflow"
+	"github.com/logtube/logtubed/types"
 	"strings"
 	"time"
 )

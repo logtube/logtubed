@@ -10,6 +10,8 @@ github.com/go-redis/redis/internal/proto
 github.com/go-redis/redis/internal/util
 # github.com/guoyk93/byteflow v1.0.0
 github.com/guoyk93/byteflow
+# github.com/guoyk93/compactkv v1.0.0
+github.com/guoyk93/compactkv
 # github.com/mailru/easyjson v0.7.0
 github.com/mailru/easyjson
 github.com/mailru/easyjson/buffer
@@ -28,7 +30,7 @@ github.com/rs/zerolog
 github.com/rs/zerolog/internal/cbor
 github.com/rs/zerolog/internal/json
 github.com/rs/zerolog/log
-# github.com/stretchr/testify v1.3.0
+# github.com/stretchr/testify v1.6.1
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
 # go.guoyk.net/common v1.8.0
@@ -41,3 +43,5 @@ go.guoyk.net/redcon
 go.guoyk.net/sptp
 # gopkg.in/yaml.v2 v2.2.8
 gopkg.in/yaml.v2
+# gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+gopkg.in/yaml.v3

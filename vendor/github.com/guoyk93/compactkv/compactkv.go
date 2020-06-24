@@ -43,13 +43,12 @@ func (ckv *CompactKV) Parse(str string) map[string]interface{} {
 		if len(kv) != 2 {
 			continue
 		}
-		tag := strings.ToLower(strings.TrimSpace(kv[0]))
-		val := strings.TrimSpace(kv[1])
-		if len(tag) == 0 || len(val) == 0 {
+		tag, val := strings.ToLower(strings.TrimSpace(kv[0])), strings.TrimSpace(kv[1])
+		if tag == "" || val == "" {
 			continue
 		}
 		name := ckv.TagNames[tag]
-		if len(name) == 0 {
+		if name == "" {
 			name = tag
 		}
 		switch ckv.TagTypes[tag] {
@@ -61,7 +60,6 @@ func (ckv *CompactKV) Parse(str string) map[string]interface{} {
 		case FloatType:
 			valFloat, _ := strconv.ParseFloat(val, 64)
 			ret[name] = valFloat
-		default:
 		}
 	}
 	return ret

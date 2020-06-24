@@ -9,6 +9,7 @@ require (
 	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/google/go-cmp v0.3.0 // indirect
 	github.com/guoyk93/byteflow v1.0.0
+	github.com/guoyk93/compactkv v1.0.0
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mailru/easyjson v0.7.0 // indirect
 	github.com/olivere/elastic v6.2.27+incompatible
@@ -16,7 +17,7 @@ require (
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.18.0
-	github.com/stretchr/testify v1.3.0
+	github.com/stretchr/testify v1.6.1
 	go.guoyk.net/common v1.8.0
 	go.guoyk.net/diskqueue v1.0.1
 	go.guoyk.net/redcon v1.0.0

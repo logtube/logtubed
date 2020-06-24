@@ -1,7 +1,7 @@
 package beat
 
 import (
-	"github.com/logtube/logtubed/pkg/compactkv"
+	"github.com/guoyk93/compactkv"
 	"github.com/logtube/logtubed/types"
 	"github.com/rs/zerolog/log"
 	"strings"
