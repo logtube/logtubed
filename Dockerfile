@@ -5,6 +5,6 @@ ADD . .
 RUN go test -mod vendor -v
 RUN go build -mod vendor -ldflags "-X main.Version=$(date -u +%Y-%m-%d_%H-%M-%S)" -o /logtubed
 
-FROM scratch
+FROM guoyk/common-alpine:3.11
 COPY --from=builder /logtubed /logtubed
 CMD ["/logtubed"]
