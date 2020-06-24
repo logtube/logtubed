@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/logtube/logtubed/types"
-	"go.guoyk.net/byteflow"
+	"github.com/guoyk93/byteflow"
 	"strings"
 	"time"
 )

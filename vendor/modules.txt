@@ -8,6 +8,8 @@ github.com/go-redis/redis/internal/hashtag
 github.com/go-redis/redis/internal/pool
 github.com/go-redis/redis/internal/proto
 github.com/go-redis/redis/internal/util
+# github.com/guoyk93/byteflow v1.0.0
+github.com/guoyk93/byteflow
 # github.com/mailru/easyjson v0.7.0
 github.com/mailru/easyjson
 github.com/mailru/easyjson/buffer
@@ -29,8 +31,6 @@ github.com/rs/zerolog/log
 # github.com/stretchr/testify v1.3.0
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
-# go.guoyk.net/byteflow v1.0.0
-go.guoyk.net/byteflow
 # go.guoyk.net/common v1.8.0
 go.guoyk.net/common
 # go.guoyk.net/diskqueue v1.0.1
