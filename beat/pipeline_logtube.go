@@ -140,26 +140,32 @@ func decodeLogtubeV2BeatMessage(raw string, r *types.Event) (ok bool) {
 		// construct r.Message with buf as buffer to reduce memory usage
 		nj, _ := dec.Buffered().Read(buf) // rest of json decoder
 		nm, _ := br.Read(buf[nj:])        // rest of the message
-		r.Message = string(bytes.TrimSpace(buf[0 : nj+nm]))
+		extractMessage(r, bytes.TrimSpace(buf[0:nj+nm]))
 		ok = true
 		return
 	} else {
-		// extract CRID, KEYWORD
-		if buf, _, ok = byteflow.Run(
-			buf,
-			byteflow.TrimOp{Left: true, Right: true},
-			byteflow.MarkDecodeOp{Name: "CRID", Out: &r.Crid},
-			byteflow.MarkDecodeOp{Name: "K", Out: &r.Keyword, Combine: true, Separator: ","},
-			byteflow.MarkDecodeOp{Name: "KW", Out: &r.Keyword, Combine: true, Separator: ","},
-			byteflow.MarkDecodeOp{Name: "KEYWORD", Out: &r.Keyword, Combine: true, Separator: ","},
-			byteflow.TrimOp{Left: true, Right: true},
-		); !ok {
-			return
-		}
-		// assign the remaining message
-		r.Message = string(buf)
+		extractMessage(r, buf)
 	}
 
+	return
+}
+
+func extractMessage(r *types.Event, buf []byte) {
+	// extract CRID, KEYWORD
+	var ok bool
+	if buf, _, ok = byteflow.Run(
+		buf,
+		byteflow.TrimOp{Left: true, Right: true},
+		byteflow.MarkDecodeOp{Name: "CRID", Out: &r.Crid},
+		byteflow.MarkDecodeOp{Name: "K", Out: &r.Keyword, Combine: true, Separator: ","},
+		byteflow.MarkDecodeOp{Name: "KW", Out: &r.Keyword, Combine: true, Separator: ","},
+		byteflow.MarkDecodeOp{Name: "KEYWORD", Out: &r.Keyword, Combine: true, Separator: ","},
+		byteflow.TrimOp{Left: true, Right: true},
+	); !ok {
+		return
+	}
+	// assign the remaining message
+	r.Message = string(buf)
 	return
 }
 

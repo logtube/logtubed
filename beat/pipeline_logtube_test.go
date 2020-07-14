@@ -57,7 +57,7 @@ func Test_decodeV2BeatMessage(t *testing.T) {
 
 func Test_decodeV2_1BeatMessage(t *testing.T) {
 	var r types.Event
-	if !decodeLogtubeV2BeatMessage(`[2019-03-27 12:32:22.324 +0800] [{"c":"0123456780af","k":"hello,world","x":{"key1":"val1"}}] message body`, &r) {
+	if !decodeLogtubeV2BeatMessage(`[2019-03-27 12:32:22.324 +0800] [{"c":"0123456780af","s":"test-source","k":"hello,world","x":{"key1":"val1"}}] message body`, &r) {
 		t.Fatal("failed to decode plain")
 	}
 	if r.Crid != "0123456780af" {
@@ -71,6 +71,9 @@ func Test_decodeV2_1BeatMessage(t *testing.T) {
 	}
 	if r.Message != "message body" {
 		t.Fatal("failed to decode message")
+	}
+	if r.Crsrc != "test-source" {
+		t.Fatal("failed to decode crsrc")
 	}
 }
 
