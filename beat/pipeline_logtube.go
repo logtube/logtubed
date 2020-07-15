@@ -145,9 +145,9 @@ func decodeLogtubeV2BeatMessage(raw string, r *types.Event) (ok bool) {
 		return
 	} else {
 		extractMessage(r, buf)
+		ok = true
+		return
 	}
-
-	return
 }
 
 func extractMessage(r *types.Event, buf []byte) {
