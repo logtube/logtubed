@@ -114,12 +114,11 @@ func main() {
 	// counters
 	var countWarm, countMove, countCold, countDelete int
 
-	// iterate indices
-	for _, index := range indices {
+	maint := func(index ESIndex) (err error) {
 		// skip system indices and blacklist
 		if conf.ShouldSkip(index.Index) {
 			log.Printf("esmaint: skip %s", index.Index)
-			continue
+			return
 		}
 
 		var ok bool
@@ -128,13 +127,13 @@ func main() {
 		var date time.Time
 		if date, ok = dateFromIndex(index.Index); !ok {
 			log.Printf("esmaint: missing date suffix: %s", index.Index)
-			continue
+			return
 		}
 		// find rule
 		var rule Rule
 		if rule, ok = conf.FindRule(index.Index); !ok {
 			log.Printf("esmaint: no rule matched: %s", index.Index)
-			continue
+			return
 		}
 
 		// calculate day count
@@ -233,6 +232,14 @@ func main() {
 					}
 				}
 			}
+		}
+		return
+	}
+
+	// iterate indices
+	for _, index := range indices {
+		if err := maint(index); err != nil {
+			log.Printf("索引处理失败: %s", err.Error())
 		}
 	}
 
