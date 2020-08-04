@@ -40,6 +40,10 @@ type Options struct {
 		Ignored         []string `yaml:"ignored" default:"$LOGTUBED_TOPICS_IGNORED|[]"`
 		Priors          []string `yaml:"priors" default:"$LOGTUBED_TOPICS_PRIORS|[]"`
 	} `yaml:"topics"`
+	Mappings struct {
+		Env   map[string]string `yaml:"env"`
+		Topic map[string]string `yaml:"topic"`
+	} `yaml:"mappings"`
 	Queue struct {
 		Dir       string `yaml:"dir" default:"$LOGTUBED_QUEUE_DIR|/var/lib/logtubed"`
 		Name      string `yaml:"name" default:"$LOGTUBED_QUEUE_NAME|logtubed"`

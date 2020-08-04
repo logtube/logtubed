@@ -179,6 +179,8 @@ func main() {
 		Next:                 outputLocal,
 		NextStd:              queueStd,
 		NextPri:              queuePri,
+		EnvMappings:          opts.Mappings.Env,
+		TopicMappings:        opts.Mappings.Topic,
 	}
 
 	if dispatcher, err = core.NewDispatcher(dOpts); err != nil {

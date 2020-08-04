@@ -13,6 +13,8 @@ type DispatcherOptions struct {
 	TopicRequireKeywords []string
 	KeywordIgnores       []string
 	Priors               []string
+	EnvMappings          map[string]string
+	TopicMappings        map[string]string
 
 	Hostname string
 
@@ -28,6 +30,8 @@ type dispatcher struct {
 	tKey map[string]bool
 	tPri map[string]bool
 	kIgn map[string]bool
+	mE   map[string]string
+	mT   map[string]string
 
 	next    types.EventConsumer
 	nextStd types.OpConsumer
@@ -49,6 +53,8 @@ func NewDispatcher(opts DispatcherOptions) (types.EventConsumer, error) {
 		tKey:     make(map[string]bool),
 		kIgn:     make(map[string]bool),
 		tPri:     make(map[string]bool),
+		mE:       make(map[string]string),
+		mT:       make(map[string]string),
 		nextStd:  opts.NextStd,
 		nextPri:  opts.NextPri,
 		next:     opts.Next,
@@ -64,6 +70,20 @@ func NewDispatcher(opts DispatcherOptions) (types.EventConsumer, error) {
 	}
 	for _, k := range opts.KeywordIgnores {
 		d.kIgn[k] = true
+	}
+	for k, v := range opts.EnvMappings {
+		k = strings.TrimSpace(k)
+		v = strings.TrimSpace(v)
+		if k != "" && v != "" {
+			d.mE[k] = v
+		}
+	}
+	for k, v := range opts.TopicMappings {
+		k = strings.TrimSpace(k)
+		v = strings.TrimSpace(v)
+		if k != "" && v != "" {
+			d.mT[k] = v
+		}
 	}
 	return d, nil
 }
@@ -98,6 +118,13 @@ func (d *dispatcher) ConsumeEvent(e types.Event) error {
 	// check drop
 	if d.shouldDropEvent(e) {
 		return nil
+	}
+	// rewrite env / topic
+	if ne, ok := d.mE[e.Env]; ok {
+		e.Env = ne
+	}
+	if nt, ok := d.mT[e.Topic]; ok {
+		e.Topic = nt
 	}
 	eg := common.NewErrorGroup()
 	if d.next != nil {
