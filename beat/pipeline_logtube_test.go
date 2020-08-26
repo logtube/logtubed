@@ -75,6 +75,13 @@ func Test_decodeV2_1BeatMessage(t *testing.T) {
 	if r.Crsrc != "test-source" {
 		t.Fatal("failed to decode crsrc")
 	}
+
+	if !decodeLogtubeV2BeatMessage(`[2020-08-14 19:09:21.727 +0800] [{"c":"995799fb55e0d7ee","x":{"method":"POST","host":"h5-web.test.pagoda.com.cn","query":"","header_user_token":"","header_app_info":"{\"channel\":\"wx\",\"openId\":\"owJnujn_rz7Bny-tnire7fNe1GbA\"}","duration":0,"response_size":false,"status":200}}]
+`, &r) {
+		t.Fatal("failed to decode")
+	}
+
+	t.Log(r)
 }
 
 func Test_decodeBeatSource(t *testing.T) {

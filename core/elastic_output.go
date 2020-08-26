@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	elasticIgnoredErrorReasons = []string{"closed"}
+	elasticIgnoredErrorTypes = []string{"mapper_parsing_exception", "index_closed_exception"}
 )
 
 type elasticCommitter struct {
@@ -59,8 +59,8 @@ func (c *elasticCommitter) Run(ctx context.Context) error {
 				var shouldRetries []int64
 			outerLoop:
 				for _, item := range failed {
-					for _, reason := range elasticIgnoredErrorReasons {
-						if item.Error.Reason == reason {
+					for _, typ := range elasticIgnoredErrorTypes {
+						if item.Error.Type == typ {
 							continue outerLoop
 						}
 					}
