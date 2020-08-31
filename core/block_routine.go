@@ -4,7 +4,14 @@ import (
 	"context"
 	"github.com/rs/zerolog/log"
 	"go.guoyk.net/common"
+	"io/ioutil"
+	"strings"
 	"time"
+)
+
+const (
+	BlockFile        = "/tmp/logtubed.block.txt"
+	BlockFileContent = "BLOCK"
 )
 
 type Blockable interface {
@@ -49,6 +56,10 @@ func (b *blockRoutine) Run(ctx context.Context) (err error) {
 				blocked = true
 				break
 			}
+		}
+		// check signal file
+		if buf, _ := ioutil.ReadFile(BlockFile); strings.TrimSpace(string(buf)) == BlockFileContent {
+			blocked = true
 		}
 		// apply blocked
 		for _, b := range b.blockables {
