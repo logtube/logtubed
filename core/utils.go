@@ -37,11 +37,11 @@ func digestPath(p string) string {
 			continue
 		}
 		if strings.Contains(item, ",") {
-			item = "DEC"
+			item = ":DEC"
 		} else if isNum(item) {
-			item = "DEC"
+			item = ":DEC"
 		} else if isHex(item) {
-			item = "HEX"
+			item = ":HEX"
 		}
 		ret = append(ret, item)
 	}
