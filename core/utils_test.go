@@ -32,6 +32,11 @@ func Test_digestPath(t *testing.T) {
 			want: "/hello/world/:dec/:hex/store",
 		},
 		{
+			name: "test-clean-uuid",
+			args: args{p: "//v1/goods/detail/126602/1441/85978/A54DC252-5DD6-4128-A8DA-BE13D9D7CBDB"},
+			want: "/v1/goods/detail/:dec/:dec/:dec/:uuid",
+		},
+		{
 			name: "test-no-touch-dubbo",
 			args: args{p: "com.something.else"},
 			want: "com.something.else",

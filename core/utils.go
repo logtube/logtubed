@@ -23,6 +23,14 @@ func isHex(s string) bool {
 	return true
 }
 
+func isUUID(s string) bool {
+	if len(s) != 36 {
+		return false
+	}
+	s = s[0:8] + s[9:13] + s[14:18] + s[19:23] + s[24:36]
+	return isHex(s)
+}
+
 func digestPath(p string) string {
 	if p == "" {
 		return p
@@ -42,6 +50,8 @@ func digestPath(p string) string {
 			item = ":dec"
 		} else if isHex(item) {
 			item = ":hex"
+		} else if isUUID(item) {
+			item = ":uuid"
 		}
 		ret = append(ret, item)
 	}
