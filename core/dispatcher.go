@@ -112,13 +112,9 @@ func (d *dispatcher) shouldDropEvent(e types.Event) bool {
 	return false
 }
 
-func (d *dispatcher) ConsumeEvent(e types.Event) error {
+func (d *dispatcher) modifyEvent(e *types.Event) {
 	// assign via
 	e.Via = d.Hostname
-	// check drop
-	if d.shouldDropEvent(e) {
-		return nil
-	}
 	// rewrite env / topic
 	if ne, ok := d.mE[e.Env]; ok {
 		e.Env = ne
@@ -126,6 +122,21 @@ func (d *dispatcher) ConsumeEvent(e types.Event) error {
 	if nt, ok := d.mT[e.Topic]; ok {
 		e.Topic = nt
 	}
+	// regenerate path digest
+	if path, ok := e.Extra["path"]; ok {
+		if path, ok := path.(string); ok && path != "" {
+			e.Extra["path_digest"] = digestPath(path)
+		}
+	}
+}
+
+func (d *dispatcher) ConsumeEvent(e types.Event) error {
+	// check drop
+	if d.shouldDropEvent(e) {
+		return nil
+	}
+	// modify event
+	d.modifyEvent(&e)
 	eg := common.NewErrorGroup()
 	if d.next != nil {
 		// delivery to Next, i.e. LocalOutput, if set
