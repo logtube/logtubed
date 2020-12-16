@@ -5,6 +5,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"go.guoyk.net/common"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -49,9 +51,12 @@ func (b *blockRoutine) Run(ctx context.Context) (err error) {
 		// check watermarks
 		for i, dir := range b.dirs {
 			watermark := b.watermarks[i]
-			du := common.NewDiskUsage(dir)
-			us := int(du.Usage() * 100)
-			if us >= watermark {
+			us, err1 := calculateDirSize(dir)
+			if err1 != nil {
+				log.Error().Err(err1).Str("dir", dir).Msg("failed to calculate dir size")
+				continue
+			}
+			if us > watermark {
 				log.Error().Str("dir", dir).Int("usage", us).Msg("watermark exceeded")
 				blocked = true
 				break
@@ -72,4 +77,22 @@ func (b *blockRoutine) Run(ctx context.Context) (err error) {
 			return
 		}
 	}
+}
+
+func calculateDirSize(dir string) (gb int, err error) {
+	var bytes int64
+	if err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		bytes += info.Size()
+		return nil
+	}); err != nil {
+		return
+	}
+	gb = int(bytes / (1000 * 1000 * 1000))
+	return
 }

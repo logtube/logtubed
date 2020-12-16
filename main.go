@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.guoyk.net/common"
+	"io/ioutil"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -51,6 +52,8 @@ func main() {
 		optVersion bool
 		optVerbose bool
 		optCfgFile string
+		optBlock   bool
+		optUnblock bool
 
 		opts types.Options
 
@@ -79,10 +82,22 @@ func main() {
 	flag.StringVar(&optCfgFile, "c", "/etc/logtubed.yml", "config file")
 	flag.BoolVar(&optVerbose, "verbose", false, "enable verbose mode")
 	flag.BoolVar(&optVersion, "version", false, "show version")
+	flag.BoolVar(&optBlock, "block", false, "block running logtubed")
+	flag.BoolVar(&optUnblock, "unblock", false, "unblock logtubed")
 	flag.Parse()
 
 	if optVersion {
 		fmt.Println("logtubed " + Version)
+		return
+	}
+
+	if optBlock {
+		err = ioutil.WriteFile(core.BlockFile, []byte(core.BlockFileContent), 0644)
+		return
+	}
+
+	if optUnblock {
+		err = os.Remove(core.BlockFile)
 		return
 	}
 
