@@ -19,17 +19,17 @@ func Test_digestPath(t *testing.T) {
 		{
 			name: "test-clean-number",
 			args: args{p: "//hello/world/-1/223/5333/store"},
-			want: "/hello/world/DEC/DEC/DEC/store",
+			want: "/hello/world/:dec/:dec/:dec/store",
 		},
 		{
 			name: "test-clean-number-coma",
 			args: args{p: "//hello/world/-1/223/5333,224,553/store"},
-			want: "/hello/world/DEC/DEC/DEC/store",
+			want: "/hello/world/:dec/:dec/:dec/store",
 		},
 		{
 			name: "test-clean-hex",
 			args: args{p: "//hello/world/-1/ee3c5e83670ba40dd80d74d7773e309b/store"},
-			want: "/hello/world/DEC/HEX/store",
+			want: "/hello/world/:dec/:hex/store",
 		},
 		{
 			name: "test-no-touch-dubbo",
