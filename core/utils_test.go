@@ -37,6 +37,26 @@ func Test_digestPath(t *testing.T) {
 			want: "/v1/goods/detail/:dec/:dec/:dec/:uuid",
 		},
 		{
+			name: "test-clean-float",
+			args: args{p: "//v1/goods/detail/126602/1441/85978/233.443"},
+			want: "/v1/goods/detail/:dec/:dec/:dec/:float",
+		},
+		{
+			name: "test-clean-float-1",
+			args: args{p: "//v1/goods/detail/126602/1441/85978/233.443,333.44"},
+			want: "/v1/goods/detail/:dec/:dec/:dec/:float",
+		},
+		{
+			name: "test-clean-float-1",
+			args: args{p: "//v1/goods/detail/126602/1441/85978/.11"},
+			want: "/v1/goods/detail/:dec/:dec/:dec/.11",
+		},
+		{
+			name: "test-clean-float-1",
+			args: args{p: "//v1/goods/detail/126602/1441/85978/11."},
+			want: "/v1/goods/detail/:dec/:dec/:dec/11.",
+		},
+		{
 			name: "test-no-touch-dubbo",
 			args: args{p: "com.something.else"},
 			want: "com.something.else",
