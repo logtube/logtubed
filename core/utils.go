@@ -9,10 +9,12 @@ func digestPathComponent(s string) string {
 		}
 	}
 	var (
-		dec      = true
-		hex      = true
-		float    = true
-		foundDot = false
+		dec   = true
+		hex   = true
+		float = true
+
+		dotFound = false
+		dotCount = 0
 	)
 
 	if len(s) != 16 && len(s) != 32 && len(s) != 64 {
@@ -21,9 +23,11 @@ func digestPathComponent(s string) string {
 
 	for i, c := range s {
 		if c == '.' {
-			foundDot = true
+			dotFound = true
+			dotCount++
 		}
 		if c == ',' {
+			dotCount = 0
 			continue
 		}
 		if !((c >= '0' && c <= '9') || (c == '-' && i == 0)) {
@@ -37,7 +41,7 @@ func digestPathComponent(s string) string {
 		}
 	}
 
-	if !foundDot {
+	if !dotFound {
 		float = false
 	}
 
@@ -45,6 +49,9 @@ func digestPathComponent(s string) string {
 		return ":hex"
 	}
 	if float {
+		if dotCount > 1 {
+			return ":version"
+		}
 		return ":float"
 	}
 	if dec {

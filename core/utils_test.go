@@ -57,6 +57,11 @@ func Test_digestPath(t *testing.T) {
 			want: "/v1/goods/detail/:dec/:dec/:dec/11.",
 		},
 		{
+			name: "test-clean-version",
+			args: args{p: "//v1/goods/detail/126602/1441/85978/11.2.3"},
+			want: "/v1/goods/detail/:dec/:dec/:dec/:version",
+		},
+		{
 			name: "test-no-touch-dubbo",
 			args: args{p: "com.something.else"},
 			want: "com.something.else",
