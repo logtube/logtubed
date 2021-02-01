@@ -146,7 +146,12 @@ func (es *ES) SetIndexRoutingToHDD(index string) (err error) {
 
 func (es *ES) CloseIndex(index string) (err error) {
 	log.Printf("es: close: %s", index)
-	_, err = es.Client.CloseIndex(index).Do(context.Background())
+	if err = es.UnmarkIndexReadOnly(index); err != nil {
+		return
+	}
+	if _, err = es.Client.CloseIndex(index).Do(context.Background()); err != nil {
+		return
+	}
 	return
 }
 
@@ -167,7 +172,8 @@ func (es *ES) MarkIndexReadOnly(index string) (err error) {
 func (es *ES) UnmarkIndexReadOnly(index string) (err error) {
 	log.Printf("es: unmark read only: %s", index)
 	_, err = es.Client.IndexPutSettings(index).FlatSettings(true).BodyJson(map[string]interface{}{
-		"index.blocks.write": nil,
+		"index.blocks.write":                  nil,
+		"index.blocks.read_only_allow_delete": nil,
 	}).Do(context.Background())
 	return
 }
