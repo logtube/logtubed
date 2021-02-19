@@ -184,9 +184,6 @@ func main() {
 					countMove++
 					log.Printf("esmiant: move index to hdd: %s", index.Index)
 					if !optDry {
-						if err = es.UnmarkIndexReadOnly(index.Index); err != nil {
-							return
-						}
 						if err = es.SetIndexRoutingToHDD(index.Index); err != nil {
 							return
 						}

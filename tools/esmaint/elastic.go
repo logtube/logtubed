@@ -136,6 +136,8 @@ func (es *ES) SetIndexCodecBestCompression(index string) (err error) {
 func (es *ES) SetIndexRoutingToHDD(index string) (err error) {
 	log.Printf("es: move index to hdd: %s", index)
 	if _, err = es.Client.IndexPutSettings(index).FlatSettings(true).BodyJson(map[string]interface{}{
+		"index.blocks.write":                        nil,
+		"index.blocks.read_only_allow_delete":       nil,
 		"index.routing.allocation.exclude.disktype": nil,
 		"index.routing.allocation.require.disktype": "hdd",
 	}).Do(context.Background()); err != nil {
