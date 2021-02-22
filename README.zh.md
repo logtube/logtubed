@@ -2,13 +2,25 @@
 
 ## 编译 logtubed
 
-首先按照官方文档，安装 Go
+1. 按照官方文档，安装 Go
+2. 使用命令行，浏览到代码根目录
+3. 编译 logtubed
 
-代码仓库已经包含所有依赖库，并且 Go 支持跨平台编译，只需要执行以下命令就可以从源代码编译 logtubed 命令的 Linux 版本（哪怕从 Windows 电脑上编译)
+    本代码仓库已经包含所有依赖库源代码，且 Go 支持跨平台编译，因此可以在 Windows 环境中编译出 Linux 可执行代码
 
-```
-GOOS=linux CGO_ENABLED=0 go build -mod vendor
-```
+    * 在 Linux 环境下执行以下命令
+    
+        ```shell
+        go build -mod vendor
+        ```
+    
+    * 在 Windows （PowerShell）环境中执行以下命令，可以直接构建出 Linux 可执行文件
+
+        ```powershell
+        $Env:GOOS="linux"
+        $Env:CGO_ENABLED="0"
+        go build -mod vendor
+        ```
 
 ## 配置文件
 
