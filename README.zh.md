@@ -34,7 +34,7 @@ input_redis:
   # 配置
   pipeline:
     logtube:
-      # 最初版本的 Logtube 日志格式不包含时区，所以必须指定时区
+      # 最初版本的 Logtube 日志格式不包含时区信息，所以必须指定默认时区
       time_offset: -8
     mysql:
       error_ignore_levels:
@@ -129,7 +129,7 @@ filebeat.inputs:
     multiline.match: after
 output.redis:
   # Redis 输出地址
-  # Filebeat 会随机写入一台主机，因此 Logtubed 也是 Share Nothing 构建，可以部署多台，互不影响
+  # Filebeat 会随机写入一台主机，因此 Logtubed 可以部署多台，互不影响
   hosts: ["10.0.0.1", "10.0.0.2", "10.0.0.1"]
   datatype: "list"
   key: "xlog"
