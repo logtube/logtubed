@@ -12,6 +12,8 @@ GOOS=linux CGO_ENABLED=0 go build -mod vendor
 
 ## 配置文件
 
+Logtubed 处理流程为 "输入" -> "过滤" -> "队列" -> "输出"，配置项也围绕着这个流程展开
+
 ```yaml
 # 关闭自身的调试日志
 verbose: false
@@ -23,6 +25,7 @@ pprof:
 
 # Redis 输入配置
 input_redis:
+  # 打开此功能
   enabled: true
   # 直接监听 6379，冒充 Redis 服务器
   bind: 0.0.0.0:6379
@@ -39,7 +42,9 @@ input_redis:
         
 # 自己开发的 SPTP UDP 协议，基本上没在使用
 input_sptp:
-  enabled: true
+  # 关闭此功能
+  enabled: false
+  # 监听地址
   bind: 0.0.0.0:9921
 
 # 主题控制
@@ -79,6 +84,7 @@ queue:
 
 # ES 输出
 output_es:
+  # 打开此功能
   enabled: true
   # 地址
   urls:
@@ -88,8 +94,9 @@ output_es:
   # 同时有多少批次写入
   concurrency: 16
 
-# 没卵用的功能
+# 把日志重新输出到本地文件
 output_local:
+  # 关闭此功能
   enabled: false
   dir: /var/log/logtube-logs
 ```
