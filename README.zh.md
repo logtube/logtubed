@@ -2,7 +2,9 @@
 
 ## 编译 logtubed
 
-代码仓库已经包含所有依赖库，并且 Go 支持跨平台编译，只需要执行以下命令就可以从源代码编译 logtubed 命令的 Linux 版本
+首先按照官方文档，安装 Go
+
+代码仓库已经包含所有依赖库，并且 Go 支持跨平台编译，只需要执行以下命令就可以从源代码编译 logtubed 命令的 Linux 版本（哪怕从 Windows 电脑上编译)
 
 ```
 GOOS=linux CGO_ENABLED=0 go build -mod vendor
