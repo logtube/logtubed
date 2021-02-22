@@ -59,6 +59,7 @@ type Options struct {
 	OutputES struct {
 		Enabled        bool     `yaml:"enabled" default:"$LOGTUBED_ES_ENABLED|false"`
 		URLs           []string `yaml:"urls" default:"$LOGTUBED_ES_URLS|[\"http://127.0.0.1:9200\"]"`
+		NoSniff        bool     `yaml:"no_sniff" default:"$LOGTUBED_ES_NO_SNIFF|false"`
 		Concurrency    int      `yaml:"concurrency" default:"$LOGTUBED_ES_CONCURRENCY|3"`
 		BatchSize      int      `yaml:"batch_size" default:"$LOGTUBED_ES_BATCH_SIZE|100"`
 		BatchTimeout   int      `yaml:"batch_timeout" default:"$LOGTUBED_ES_BATCH_TIMEOUT|3"`

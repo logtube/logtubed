@@ -6,14 +6,14 @@
 2. 使用命令行，浏览到代码根目录
 3. 编译 logtubed
 
-    本代码仓库已经包含所有依赖库源代码，且 Go 支持跨平台编译，因此可以在 Windows 环境中编译出 Linux 可执行代码
+   本代码仓库已经包含所有依赖库源代码，且 Go 支持跨平台编译，因此可以在 Windows 环境中编译出 Linux 可执行代码
 
     * 在 Linux 环境下执行以下命令
-    
+
         ```shell
         go build -mod vendor
         ```
-    
+
     * 在 Windows （PowerShell）环境中执行以下命令，可以直接构建出 Linux 可执行文件
 
         ```powershell
@@ -51,7 +51,7 @@ input_redis:
     mysql:
       error_ignore_levels:
         - note
-        
+
 # 自己开发的 SPTP UDP 协议，基本上没在使用
 input_sptp:
   # 关闭此功能
@@ -101,16 +101,41 @@ output_es:
   # 地址
   urls:
     - http://127.0.0.1:9200
+  # 是否停用客户端嗅探功能，如果是容器部署的 ES 可以把这个选项设置为 true 避免连接不到服务器
+  no_siff: false
+  # 为了实现最大吞吐量，logtubed 会分批将日志写入 ES，逻辑为数量满足 batch_size 时，或者等待超过 batch_timeout 秒后，将该批次写入 ES
   # 每批次写入数量
   batch_size: 4000
+  # 最大批次延迟，单位为秒
+  batch_timeout: 3
   # 同时有多少批次写入
   concurrency: 16
+  # ES 7.x 以上默认不再开启 Mapping Type 功能，可以把这个选项设置为 true，这时 logtubed 输出 ES 不再设置 Mapping Type
+  no_mapping_types: false
 
 # 把日志重新输出到本地文件
 output_local:
   # 关闭此功能
   enabled: false
   dir: /var/log/logtube-logs
+```
+
+## 载入索引模板到 ES
+
+ElasticSearch 模板定义在单独的代码仓库里面
+
+https://github.com/logtube/elasticsearch-templates
+
+使用如下 Docker 命令可以自动将模板载入到 ES
+
+```shell
+docker run --rm -e ES_URL=http://elasticsearch:9200 guoyk/logtube-esloadtpl
+```
+
+如果使用 ES 7.x 以上版本，并弃用 Mapping Type 功能，则使用以下命令载入无 Mapping Type 版本的索引模板
+
+```shell
+docker run --rm -e ES_URL=http://elasticsearch:9200 guoyk/logtube-esloadtpl
 ```
 
 ## 启动 Logtubed

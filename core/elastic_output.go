@@ -101,6 +101,7 @@ func (c *elasticCommitter) Run(ctx context.Context) error {
 type ElasticOutputOptions struct {
 	Name           string
 	URLs           []string
+	NoSniff        bool
 	Concurrency    int
 	BatchSize      int
 	BatchTimeout   time.Duration
@@ -141,7 +142,7 @@ func NewElasticOutput(opts ElasticOutputOptions) (ElasticOutput, error) {
 	}
 	var c *elastic.Client
 	var err error
-	if c, err = elastic.NewClient(elastic.SetURL(opts.URLs...)); err != nil {
+	if c, err = elastic.NewClient(elastic.SetURL(opts.URLs...), elastic.SetSniff(!opts.NoSniff)); err != nil {
 		return nil, err
 	}
 	eo := &elasticOutput{

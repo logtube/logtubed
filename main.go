@@ -124,6 +124,7 @@ func main() {
 		if outputEsStd, err = core.NewElasticOutput(core.ElasticOutputOptions{
 			Name:           "std",
 			URLs:           opts.OutputES.URLs,
+			NoSniff:        opts.OutputES.NoSniff,
 			Concurrency:    opts.OutputES.Concurrency,
 			BatchSize:      opts.OutputES.BatchSize,
 			BatchTimeout:   time.Duration(opts.OutputES.BatchTimeout) * time.Second,
@@ -146,11 +147,13 @@ func main() {
 
 		if len(opts.Topics.Priors) > 0 {
 			if outputEsPri, err = core.NewElasticOutput(core.ElasticOutputOptions{
-				Name:         "pri",
-				URLs:         opts.OutputES.URLs,
-				Concurrency:  opts.OutputES.Concurrency,
-				BatchSize:    opts.OutputES.BatchSize,
-				BatchTimeout: time.Duration(opts.OutputES.BatchTimeout) * time.Second,
+				Name:           "pri",
+				URLs:           opts.OutputES.URLs,
+				NoSniff:        opts.OutputES.NoSniff,
+				Concurrency:    opts.OutputES.Concurrency,
+				BatchSize:      opts.OutputES.BatchSize,
+				BatchTimeout:   time.Duration(opts.OutputES.BatchTimeout) * time.Second,
+				NoMappingTypes: opts.OutputES.NoMappingTypes,
 			}); err != nil {
 				return
 			}
