@@ -135,7 +135,7 @@ docker run --rm -e ES_URL=http://elasticsearch:9200 guoyk/logtube-esloadtpl
 如果使用 ES 7.x 以上版本，并弃用 Mapping Type 功能，则使用以下命令载入无 Mapping Type 版本的索引模板
 
 ```shell
-docker run --rm -e ES_URL=http://elasticsearch:9200 guoyk/logtube-esloadtpl
+docker run --rm -e ES_URL=http://elasticsearch:9200 guoyk/logtube-esloadtpl:nomt
 ```
 
 ## 启动 Logtubed
