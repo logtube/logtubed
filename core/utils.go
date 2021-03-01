@@ -1,8 +1,14 @@
 package core
 
-import "strings"
+import (
+	"net/url"
+	"strings"
+)
 
 func digestPathComponent(s string) string {
+	if n, e := url.PathUnescape(s); e == nil && n != s {
+		s = n
+	}
 	if len(s) == 36 {
 		if digestPathComponent(s[0:8]+s[9:13]+s[14:18]+s[19:23]+s[24:36]) == ":hex" {
 			return ":uuid"
