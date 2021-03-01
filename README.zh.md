@@ -102,7 +102,7 @@ output_es:
   urls:
     - http://127.0.0.1:9200
   # 是否停用客户端嗅探功能，如果是容器部署的 ES 可以把这个选项设置为 true 避免连接不到服务器
-  no_siff: false
+  no_sniff: false
   # 为了实现最大吞吐量，logtubed 会分批将日志写入 ES，逻辑为数量满足 batch_size 时，或者等待超过 batch_timeout 秒后，将该批次写入 ES
   # 每批次写入数量
   batch_size: 4000
@@ -135,7 +135,7 @@ docker run --rm -e ES_URL=http://elasticsearch:9200 guoyk/logtube-esloadtpl
 如果使用 ES 7.x 以上版本，并弃用 Mapping Type 功能，则使用以下命令载入无 Mapping Type 版本的索引模板
 
 ```shell
-docker run --rm -e ES_URL=http://elasticsearch:9200 guoyk/logtube-esloadtpl
+docker run --rm -e ES_URL=http://elasticsearch:9200 guoyk/logtube-esloadtpl:nomt
 ```
 
 ## 启动 Logtubed
