@@ -116,6 +116,8 @@ func (d *dispatcher) modifyEvent(e *types.Event) {
 	// assign via
 	e.Via = d.Hostname
 	// rewrite env / topic
+	e.Env = strings.TrimSpace(strings.ToLower(e.Env))
+	e.Topic = strings.TrimSpace(strings.ToLower(e.Topic))
 	if ne, ok := d.mE[e.Env]; ok {
 		e.Env = ne
 	}
