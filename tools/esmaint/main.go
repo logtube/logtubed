@@ -26,6 +26,7 @@ var (
 	optMove     bool
 	optCold     bool
 	optReopen   bool
+	optIgnores  string
 
 	conf Conf
 )
@@ -54,7 +55,14 @@ func main() {
 	flag.BoolVar(&optCold, "cold", false, "执行 冷区 步骤")
 	flag.BoolVar(&optDelete, "delete", false, "执行 删除 步骤")
 	flag.BoolVar(&optReopen, "reopen", false, "执行重新打开索引步骤，并等待调度恢复")
+	flag.StringVar(&optIgnores, "ignores", "", "关闭索引时忽略某些索引")
 	flag.Parse()
+
+	ignores := map[string]bool{}
+
+	for _, v := range strings.Split(optIgnores, ",") {
+		ignores[strings.TrimSpace(v)] = true
+	}
 
 	// load conf
 	if err = common.LoadYAMLConfigFile(optConf, &conf); err != nil {
@@ -118,6 +126,11 @@ func main() {
 		// skip system indices and blacklist
 		if conf.ShouldSkip(index.Index) {
 			log.Printf("esmaint: skip %s", index.Index)
+			return
+		}
+
+		if ignores[index.Index] {
+			log.Printf("esmaint: ignore %s", index.Index)
 			return
 		}
 
